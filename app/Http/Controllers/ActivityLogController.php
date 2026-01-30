@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Spatie\Activitylog\Models\Activity;
 
@@ -10,11 +9,14 @@ class ActivityLogController extends Controller
 {
     public function index()
     {
-        // Ambil data log, urutkan dari yang terbaru, dan ambil data pelakunya (causer)
-        $activities = Activity::with('causer')
+        // Ambil log aktivitas
+        // 'causer' = Pelaku (User)
+        // 'subject' = Data yang diubah (Order/Client/dll)
+        $activities = Activity::with(['causer', 'subject'])
             ->latest()
-            ->paginate(20); // Tampilkan 20 per halaman
+            ->paginate(20);
 
+        // Perhatikan: Folder 'ActivityLogs' (Pakai 's')
         return Inertia::render('ActivityLog/Index', [
             'activities' => $activities
         ]);
