@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 
 class ClientController extends Controller
 {
+
     public function index()
     {
         // Kita kirim data klien seperti biasa

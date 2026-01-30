@@ -65,10 +65,14 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
-        if ($user->id === auth()->id()) {
-            return back()->withErrors(['error' => 'Anda tidak bisa menghapus akun sendiri!']);
+        // Cek Policy dulu sebelum eksekusi
+        // Jika Bos yang klik, dia akan kena Error 403 (Forbidden)
+        if (request()->user()->cannot('delete', $user)) {
+            abort(403, 'Maaf Bos, Anda tidak memiliki akses untuk menghapus data ini.');
         }
+
         $user->delete();
-        return back()->with('success', 'Pengguna dihapus.');
+
+        return redirect()->back()->with('success', 'Data berhasil dihapus');
     }
 }

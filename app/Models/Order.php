@@ -8,11 +8,11 @@ use Spatie\Activitylog\LogOptions;
 
 class Order extends Model
 {
-    use LogsActivity; // <--- Pasang CCTV
+    use LogsActivity;
 
     protected $guarded = [];
 
-    // Konfigurasi Logging
+    // Konfigurasi Logging CCTV
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
@@ -43,5 +43,13 @@ class Order extends Model
     public function files()
     {
         return $this->hasMany(OrderFile::class);
+    }
+
+    // --- INI YANG TADI HILANG ---
+    // Relasi ke Pembayaran (Payments)
+    public function payments()
+    {
+        // Satu Order punya Banyak Pembayaran, urutkan dari yang terbaru
+        return $this->hasMany(Payment::class)->latest();
     }
 }

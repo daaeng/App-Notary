@@ -127,8 +127,8 @@ class OrderController extends Controller
     // HALAMAN EDIT (DETAIL)
     public function edit(Order $order)
     {
-        // Ambil data order beserta detailnya
-        $order->load(['client', 'service', 'ppat_detail', 'files']);
+        // UPDATE: Tambahkan 'payments.user' agar riwayat bayar muncul
+        $order->load(['client', 'service', 'files', 'payments.user']);
 
         return Inertia::render('Orders/Edit', [
             'order' => $order,

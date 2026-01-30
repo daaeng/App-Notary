@@ -4,7 +4,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { PageProps } from '@/types';
 import { route } from 'ziggy-js';
 
-// Tipe Data (Samakan dengan Database)
+// Tipe Data (Update: ijinkan null agar Typescript tidak protes)
 interface Order {
     id: number;
     order_number: string;
@@ -13,14 +13,15 @@ interface Order {
     total_amount: number;
     payment_status: string;
     created_at: string;
+    // Client & Service bisa null jika data master dihapus
     client: {
         name: string;
         phone: string;
-    };
+    } | null;
     service: {
         name: string;
         code: string;
-    };
+    } | null;
 }
 
 interface Props extends PageProps {
@@ -33,12 +34,18 @@ interface Props extends PageProps {
 export default function OrderIndex({ orders }: Props) {
     const [search, setSearch] = useState('');
 
-    // Filter Search Client Side (Simple)
-    const filteredOrders = orders.data.filter((order) =>
-        order.order_number.toLowerCase().includes(search.toLowerCase()) ||
-        order.client.name.toLowerCase().includes(search.toLowerCase()) ||
-        (order.description && order.description.toLowerCase().includes(search.toLowerCase()))
-    );
+    // --- PERBAIKAN 1: SAFE SEARCH FILTER ---
+    // Tambahkan '?' (Optional Chaining) agar tidak crash saat client/service null
+    const filteredOrders = orders.data.filter((order) => {
+        const searchLower = search.toLowerCase();
+
+        return (
+            order.order_number.toLowerCase().includes(searchLower) ||
+            // Cek apakah client ada sebelum cek namanya
+            (order.client?.name && order.client.name.toLowerCase().includes(searchLower)) ||
+            (order.description && order.description.toLowerCase().includes(searchLower))
+        );
+    });
 
     // Helper: Warna Badge Status Pengerjaan
     const getStatusBadge = (status: string) => {
@@ -60,7 +67,7 @@ export default function OrderIndex({ orders }: Props) {
     };
 
     return (
-        <AppLayout breadcrumbs={[{ title: 'Pekerjaan', href: '/orders' }]}>
+        <AppLayout breadcrumbs={[{ title: 'Order', href: '/orders' }]}>
             <Head title="Daftar Pekerjaan" />
 
             <div className="min-h-screen bg-slate-50/50 p-6 lg:p-8 font-sans">
@@ -127,9 +134,12 @@ export default function OrderIndex({ orders }: Props) {
                                                     <span className="font-mono text-xs font-bold text-cyan-600 bg-cyan-50 px-2 py-0.5 rounded w-fit mb-1">
                                                         {order.order_number}
                                                     </span>
+
+                                                    {/* --- PERBAIKAN 2: SAFE SERVICE RENDER --- */}
                                                     <span className="font-bold text-slate-800 text-sm line-clamp-1" title={order.description}>
-                                                        {order.service.name}
+                                                        {order.service?.name || <span className="text-red-400 italic">Layanan Dihapus</span>}
                                                     </span>
+
                                                     <span className="text-xs text-slate-500 line-clamp-1 mt-0.5">
                                                         {order.description || '- Tidak ada keterangan -'}
                                                     </span>
@@ -138,8 +148,13 @@ export default function OrderIndex({ orders }: Props) {
 
                                             {/* Kolom 2: Klien */}
                                             <td className="px-6 py-4">
-                                                <div className="text-sm font-medium text-slate-900">{order.client.name}</div>
-                                                <div className="text-xs text-slate-400">{order.client.phone}</div>
+                                                {/* --- PERBAIKAN 3: SAFE CLIENT RENDER --- */}
+                                                <div className="text-sm font-medium text-slate-900">
+                                                    {order.client?.name || <span className="text-red-400 italic">Data Klien Hilang</span>}
+                                                </div>
+                                                <div className="text-xs text-slate-400">
+                                                    {order.client?.phone || '-'}
+                                                </div>
                                             </td>
 
                                             {/* Kolom 3: Keuangan */}

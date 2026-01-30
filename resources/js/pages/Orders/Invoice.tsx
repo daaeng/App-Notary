@@ -2,7 +2,7 @@ import { Head } from '@inertiajs/react';
 import { PageProps } from '@/types';
 import { useEffect } from 'react';
 
-// Definisikan tipe data yang kita kirim dari controller
+// --- PERBAIKAN 1: Update Tipe Data (Izinkan Null) ---
 interface OrderData {
     id: number;
     order_number: string;
@@ -11,8 +11,9 @@ interface OrderData {
     service_price: number;
     tax_deposit: number;
     total_amount: number;
-    client: { name: string; address: string; phone: string };
-    service: { name: string };
+    // Client & Service kita izinkan null
+    client: { name: string; address: string; phone: string } | null;
+    service: { name: string } | null;
     ppat_detail?: { object_address: string; certificate_number: string };
 }
 
@@ -55,10 +56,10 @@ export default function Invoice({ order, company }: InvoiceProps) {
 
                 {/* KOP SURAT */}
                 <div className="text-center border-b-4 border-double border-slate-800 pb-6 mb-8">
-                    <h1 className="text-3xl font-bold tracking-wider uppercase text-slate-900">{company.name}</h1>
-                    <h2 className="text-xl font-semibold mt-1">{company.notary_name}</h2>
-                    <p className="text-sm text-slate-600 mt-2">{company.address}</p>
-                    <p className="text-sm text-slate-600">Telp: {company.phone} | Email: {company.email}</p>
+                    <h1 className="text-3xl font-bold tracking-wider uppercase text-slate-900">{company?.name || 'KANTOR NOTARIS'}</h1>
+                    <h2 className="text-xl font-semibold mt-1">{company?.notary_name || '-'}</h2>
+                    <p className="text-sm text-slate-600 mt-2">{company?.address}</p>
+                    <p className="text-sm text-slate-600">Telp: {company?.phone} | Email: {company?.email}</p>
                 </div>
 
                 {/* JUDUL DOKUMEN */}
@@ -74,12 +75,19 @@ export default function Invoice({ order, company }: InvoiceProps) {
                     </div>
                 </div>
 
-                {/* INFO KLIEN */}
+                {/* --- PERBAIKAN 2: SAFE CLIENT RENDER --- */}
+                {/* Kita gunakan '?' dan '||' agar tidak error saat client null */}
                 <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 mb-8">
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Ditagihkan Kepada:</p>
-                    <p className="text-lg font-bold text-slate-800">{order.client.name}</p>
-                    <p className="text-slate-600 whitespace-pre-line">{order.client.address}</p>
-                    <p className="text-slate-600 mt-1">{order.client.phone}</p>
+                    <p className="text-lg font-bold text-slate-800">
+                        {order.client?.name || <span className="text-red-500 italic">(Data Klien Terhapus)</span>}
+                    </p>
+                    <p className="text-slate-600 whitespace-pre-line">
+                        {order.client?.address || '-'}
+                    </p>
+                    <p className="text-slate-600 mt-1">
+                        {order.client?.phone || '-'}
+                    </p>
                 </div>
 
                 {/* TABEL RINCIAN */}
@@ -93,7 +101,10 @@ export default function Invoice({ order, company }: InvoiceProps) {
                     <tbody className="text-slate-700">
                         <tr className="border-b border-slate-200">
                             <td className="py-4">
-                                <p className="font-bold text-lg">{order.service.name}</p>
+                                {/* --- PERBAIKAN 3: SAFE SERVICE RENDER --- */}
+                                <p className="font-bold text-lg">
+                                    {order.service?.name || <span className="text-red-500 italic">Layanan Dihapus</span>}
+                                </p>
                                 <p className="text-sm text-slate-500 mt-1">{order.description}</p>
                                 {order.ppat_detail && (
                                     <p className="text-xs text-slate-400 mt-1 italic">
@@ -133,13 +144,13 @@ export default function Invoice({ order, company }: InvoiceProps) {
                         <p className="font-bold text-slate-800 mb-2">Metode Pembayaran:</p>
                         <p>Transfer Bank BCA</p>
                         <p>No. Rek: 123-456-7890</p>
-                        <p>A.n: Orista Miranti Irpada Adam, S.H., M.Kn.</p>
+                        <p>A.n: {company?.notary_name || 'Notaris'}</p>
                         <p className="mt-4 italic">Mohon menyertakan nomor invoice dalam berita acara transfer.</p>
                     </div>
                     <div className="w-1/3 text-center">
                         <p className="mb-20">Hormat Kami,</p>
                         <div className="border-b border-slate-800"></div>
-                        <p className="mt-2 font-bold">{company.notary_name}</p>
+                        <p className="mt-2 font-bold">{company?.notary_name}</p>
                     </div>
                 </div>
 
