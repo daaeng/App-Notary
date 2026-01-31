@@ -11,17 +11,19 @@ return new class extends Migration
         Schema::create('companies', function (Blueprint $table) {
             $table->id();
             $table->string('name')->default('KANTOR NOTARIS & PPAT');
-            $table->string('notary_name'); // Nama pejabat
+            $table->string('notary_name');
             $table->string('address');
             $table->string('phone');
             $table->string('email')->nullable();
+
+            // [BARU] Tambahan Kolom
+            $table->string('bank_account')->nullable(); // Nama Bank & No Rek
+            $table->string('logo_path')->nullable();    // Lokasi file logo
+
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('companies');

@@ -127,7 +127,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Pengaturan Kantor
         Route::get('office-settings', [CompanyController::class, 'edit'])->name('settings.edit');
         Route::put('office-settings', [CompanyController::class, 'update'])->name('settings.update');
-    });
+        Route::delete('/office-settings/logo', [\App\Http\Controllers\CompanyController::class, 'destroyLogo'])->name('settings.logo.delete');
+
+     });
 
 
     // MONITORING CCTV & LAINNYA

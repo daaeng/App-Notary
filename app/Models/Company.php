@@ -12,5 +12,7 @@ class Company extends Model
         'address',
         'phone',
         'email',
+        'bank_account', // Baru
+        'logo_path',    // Baru
     ];
 }

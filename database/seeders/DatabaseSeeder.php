@@ -11,6 +11,8 @@ class DatabaseSeeder extends Seeder
         // Panggil seeder role di sini
         $this->call([
             RoleSeeder::class,
+            CompanySeeder::class,
+            ServiceSeeder::class,
         ]);
     }
 }
