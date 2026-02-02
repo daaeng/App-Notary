@@ -4,7 +4,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { PageProps } from '@/types';
 import { route } from 'ziggy-js';
 
-// Tipe Data
+// --- TIPE DATA ---
 interface Order {
     id: number;
     order_number: string;
@@ -16,7 +16,6 @@ interface Order {
     client: {
         name: string;
         phone: string;
-        nik_or_npwp: string;
     };
     service: {
         name: string;
@@ -31,208 +30,234 @@ interface Props extends PageProps {
     };
 }
 
-export default function OrderIndex({ orders }: Props) {
+export default function OrderIndexExecutive({ orders }: Props) {
     const [search, setSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState('active'); // 'active', 'done', 'all'
 
-    // Filter Search Client Side
-    const filteredOrders = orders.data.filter((order) =>
-        order.order_number.toLowerCase().includes(search.toLowerCase()) ||
-        order.client.name.toLowerCase().includes(search.toLowerCase()) ||
-        (order.description && order.description.toLowerCase().includes(search.toLowerCase()))
-    );
+    // --- LOGIC FILTER ---
+    const filteredOrders = orders.data.filter((order) => {
+        // Filter Search
+        const matchesSearch =
+            order.order_number.toLowerCase().includes(search.toLowerCase()) ||
+            order.client.name.toLowerCase().includes(search.toLowerCase()) ||
+            (order.description && order.description.toLowerCase().includes(search.toLowerCase()));
 
-    // Helper Rupiah (Format Indonesia)
-    const rupiah = (num: number) => {
-        return new Intl.NumberFormat('id-ID', {
-            style: 'currency',
-            currency: 'IDR',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-        }).format(num);
+        if (!matchesSearch) return false;
+
+        // Filter Tab Status
+        if (statusFilter === 'active') return !['done', 'cancel'].includes(order.status);
+        if (statusFilter === 'done') return ['done', 'cancel'].includes(order.status);
+
+        return true; // 'all'
+    });
+
+    // Hitung Statistik Sederhana (Client Side - dari data yang di-load)
+    const stats = {
+        total: orders.data.length,
+        active: orders.data.filter(o => !['done', 'cancel'].includes(o.status)).length,
+        done: orders.data.filter(o => o.status === 'done').length,
     };
 
-    // Badge Status Pengerjaan (Pill Shape)
+    const rupiah = (num: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
+
+    // Helper Status Badge (Senada dengan Edit Page)
     const getStatusBadge = (status: string) => {
-        const styles: any = {
-            new:     'bg-blue-50 text-blue-700 ring-blue-600/20',
-            draft:   'bg-slate-100 text-slate-700 ring-slate-600/20',
-            process: 'bg-amber-50 text-amber-700 ring-amber-600/20',
-            minuta:  'bg-purple-50 text-purple-700 ring-purple-600/20',
-            done:    'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
-            cancel:  'bg-red-50 text-red-700 ring-red-600/10',
+        const map: any = {
+            new: { label: 'Baru Masuk', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/20', dot: 'bg-blue-500' },
+            draft: { label: 'Drafting', color: 'text-slate-600 dark:text-slate-400', bg: 'bg-slate-50 dark:bg-slate-800', dot: 'bg-slate-500' },
+            process: { label: 'Proses', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20', dot: 'bg-amber-500' },
+            minuta: { label: 'Siap TTD', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/20', dot: 'bg-purple-500' },
+            done: { label: 'Selesai', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20', dot: 'bg-emerald-500' },
+            cancel: { label: 'Batal', color: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-900/20', dot: 'bg-red-500' },
         };
-
-        const labels: any = {
-            new: 'Baru Masuk',
-            draft: 'Drafting',
-            process: 'Dalam Proses',
-            minuta: 'Minuta / TTD',
-            done: 'Selesai',
-            cancel: 'Dibatalkan'
-        };
-
+        const s = map[status] || map.new;
         return (
-            <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${styles[status] || 'bg-gray-50 text-gray-600 ring-gray-500/10'}`}>
-                {labels[status] || status}
-            </span>
+            <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold w-fit ${s.bg} ${s.color}`}>
+                <div className={`w-1.5 h-1.5 rounded-full ${s.dot}`}></div>
+                {s.label}
+            </div>
         );
-    };
-
-    // Badge Status Pembayaran
-    const getPaymentBadge = (status: string) => {
-        if (status === 'paid') {
-            return <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700 ring-1 ring-inset ring-emerald-600/20">LUNAS</span>;
-        }
-        if (status === 'partial') {
-            return <span className="inline-flex items-center rounded-full bg-orange-50 px-2 py-1 text-[10px] font-bold text-orange-700 ring-1 ring-inset ring-orange-600/20">CICILAN</span>;
-        }
-        return <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-1 text-[10px] font-bold text-red-700 ring-1 ring-inset ring-red-600/10">BELUM LUNAS</span>;
     };
 
     return (
         <AppLayout breadcrumbs={[{ title: 'Order', href: '/orders' }]}>
             <Head title="Daftar Pekerjaan" />
 
-            <div className="min-h-screen bg-slate-50/50 p-6 lg:p-8 font-sans">
+            <div className="min-h-screen bg-gray-50 dark:bg-black font-sans transition-colors duration-300 p-4 lg:p-8">
+                <div className="w-full mx-auto space-y-8">
 
-                {/* HEADER AREA */}
-                <div className="flex flex-col md:flex-row justify-between items-end mb-6 gap-4">
-                    <div>
-                        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Daftar Pekerjaan</h1>
-                        <p className="text-slate-500 text-sm">Pantau progres berkas dan status pembayaran klien.</p>
-                    </div>
+                    {/* HEADER & STATS CARDS */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
-                    <div className="flex gap-3 w-full md:w-auto">
-                        {/* Search Input */}
-                        <div className="relative group flex-1 md:flex-none">
-                            <input
-                                type="text"
-                                placeholder="Cari No. Order / Klien..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                className="pl-10 pr-4 py-2.5 w-full md:w-72 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-slate-200 focus:border-slate-400 transition-all shadow-sm"
-                            />
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <svg className="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        {/* Title Section */}
+                        <div className="lg:col-span-1 flex flex-col justify-center">
+                            <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Pekerjaan</h1>
+                            <p className="text-slate-500 dark:text-zinc-400 text-sm mt-1">Daftar semua berkas masuk.</p>
+                            <Link
+                                href={route('orders.create')}
+                                className="mt-4 w-fit px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-indigo-500/20 transition flex items-center gap-2"
+                            >
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
+                                Buat Order Baru
+                            </Link>
+                        </div>
+
+                        {/* Stat 1: Sedang Jalan */}
+                        <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm flex items-center justify-between group hover:border-indigo-500/30 transition">
+                            <div>
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Sedang Jalan</p>
+                                <p className="text-3xl font-black text-slate-800 dark:text-white">{stats.active}</p>
+                            </div>
+                            <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-500">
+                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                             </div>
                         </div>
 
-                        {/* Button Buat Order */}
-                        <Link
-                            href={route('orders.create')}
-                            className="flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-bold text-white bg-slate-900 rounded-xl hover:bg-slate-800 shadow-lg shadow-slate-900/10 hover:-translate-y-0.5 transition-all whitespace-nowrap"
-                        >
-                            <svg className="w-5 h-5 text-slate-400" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" /></svg>
-                            Buat Baru
-                        </Link>
-                    </div>
-                </div>
+                        {/* Stat 2: Selesai */}
+                        <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm flex items-center justify-between group hover:border-emerald-500/30 transition">
+                            <div>
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Selesai</p>
+                                <p className="text-3xl font-black text-slate-800 dark:text-white">{stats.done}</p>
+                            </div>
+                            <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center text-emerald-500">
+                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            </div>
+                        </div>
 
-                {/* TABEL LIST */}
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-slate-100">
-                            <thead>
-                                <tr className="bg-slate-50/50">
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Pekerjaan</th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Klien</th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Total Tagihan</th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Status</th>
-                                    <th className="px-6 py-4 text-right text-xs font-bold text-slate-400 uppercase tracking-wider">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 bg-white">
-                                {filteredOrders.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={5} className="px-6 py-16 text-center text-slate-400">
-                                            <div className="flex flex-col items-center justify-center">
-                                                <span className="text-4xl mb-2">📂</span>
-                                                <p>Belum ada data pekerjaan.</p>
+                        {/* Stat 3: Total */}
+                        <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Berkas</p>
+                                <p className="text-3xl font-black text-slate-800 dark:text-white">{stats.total}</p>
+                            </div>
+                            <div className="w-12 h-12 rounded-xl bg-slate-50 dark:bg-zinc-800 flex items-center justify-center text-slate-500">
+                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* MAIN CONTENT AREA */}
+                    <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-gray-200 dark:border-zinc-800 shadow-sm overflow-hidden min-h-[500px]">
+
+                        {/* TOOLBAR */}
+                        <div className="p-5 border-b border-gray-200 dark:border-zinc-800 flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-50/50 dark:bg-black/20">
+
+                            {/* Filter Tabs */}
+                            <div className="flex p-1 bg-white dark:bg-black rounded-xl border border-gray-200 dark:border-zinc-800">
+                                {['active', 'done', 'all'].map(tab => (
+                                    <button
+                                        key={tab}
+                                        onClick={() => setStatusFilter(tab)}
+                                        className={`px-4 py-2 text-xs font-bold rounded-lg transition-all capitalize ${
+                                            statusFilter === tab
+                                            ? 'bg-slate-900 dark:bg-zinc-800 text-white shadow-md'
+                                            : 'text-slate-500 hover:text-slate-900 dark:text-zinc-500 dark:hover:text-zinc-300'
+                                        }`}
+                                    >
+                                        {tab === 'active' ? 'Sedang Jalan' : tab === 'done' ? 'Selesai / Batal' : 'Semua'}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Search */}
+                            <div className="relative w-full md:w-auto group">
+                                <input
+                                    type="text"
+                                    placeholder="Cari No. Order / Klien..."
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    className="w-full md:w-80 pl-10 pr-4 py-2.5 bg-white dark:bg-black border border-gray-200 dark:border-zinc-800 rounded-xl text-sm font-bold text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all"
+                                />
+                                <svg className="w-5 h-5 text-slate-400 absolute left-3 top-2.5 group-focus-within:text-indigo-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                            </div>
+                        </div>
+
+                        {/* ORDER LIST (Card Row Style) */}
+                        <div className="divide-y divide-gray-100 dark:divide-zinc-800">
+                            {filteredOrders.length === 0 ? (
+                                <div className="py-20 text-center text-slate-400 dark:text-zinc-600">
+                                    <p className="text-4xl mb-3 opacity-50">📭</p>
+                                    <p className="font-bold">Tidak ada data ditemukan.</p>
+                                </div>
+                            ) : (
+                                filteredOrders.map((order) => (
+                                    <Link
+                                        href={route('orders.edit', order.id)}
+                                        key={order.id}
+                                        className="group block p-5 hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors"
+                                    >
+                                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+
+                                            {/* Left: Info Utama */}
+                                            <div className="flex items-center gap-4 w-full md:w-1/3">
+                                                <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-zinc-800 flex items-center justify-center text-lg font-bold text-slate-500 dark:text-zinc-400 border border-slate-200 dark:border-zinc-700">
+                                                    {order.client.name.substring(0, 1)}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <h3 className="text-base font-bold text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                                                        {order.client.name}
+                                                    </h3>
+                                                    <p className="text-xs text-slate-500 dark:text-zinc-500 font-mono">
+                                                        #{order.order_number}
+                                                    </p>
+                                                </div>
                                             </div>
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    filteredOrders.map((order) => (
-                                        <tr key={order.id} className="hover:bg-slate-50 transition-colors group">
 
-                                            {/* Kolom 1: Pekerjaan */}
-                                            <td className="px-6 py-4">
-                                                <div className="flex flex-col gap-1">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="font-mono text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                                                            {order.order_number}
-                                                        </span>
-                                                        <span className="text-[10px] text-slate-400">
-                                                            {new Date(order.created_at).toLocaleDateString('id-ID')}
-                                                        </span>
-                                                    </div>
-                                                    <span className="font-bold text-slate-800 text-sm">
-                                                        {order.service.name}
+                                            {/* Middle: Layanan */}
+                                            <div className="w-full md:w-1/3">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <span className="text-[10px] font-bold uppercase tracking-wider bg-gray-100 dark:bg-zinc-800 px-2 py-0.5 rounded text-slate-500 dark:text-zinc-400 border border-gray-200 dark:border-zinc-700">
+                                                        {order.service.code}
                                                     </span>
-                                                    {order.description && (
-                                                        <span className="text-xs text-slate-500 italic line-clamp-1 max-w-[250px]">
-                                                            "{order.description}"
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </td>
-
-                                            {/* Kolom 2: Klien */}
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-600 font-bold text-xs border border-slate-300">
-                                                        {order.client.name.substring(0, 2).toUpperCase()}
-                                                    </div>
-                                                    <div>
-                                                        <div className="text-sm font-bold text-slate-700">{order.client.name}</div>
-                                                        <div className="text-xs text-slate-400 font-mono">{order.client.phone}</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-
-                                            {/* Kolom 3: Tagihan */}
-                                            <td className="px-6 py-4">
-                                                <div className="flex flex-col items-start gap-1.5">
-                                                    <span className="text-sm font-bold text-slate-800 font-mono tracking-tight">
-                                                        {rupiah(order.total_amount)}
+                                                    <span className="text-xs text-slate-400 dark:text-zinc-600">
+                                                        {new Date(order.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
                                                     </span>
-                                                    {getPaymentBadge(order.payment_status)}
                                                 </div>
-                                            </td>
+                                                <p className="text-sm font-medium text-slate-700 dark:text-zinc-300 truncate">
+                                                    {order.service.name}
+                                                </p>
+                                            </div>
 
-                                            {/* Kolom 4: Status */}
-                                            <td className="px-6 py-4">
+                                            {/* Right: Status & Aksi */}
+                                            <div className="w-full md:w-1/3 flex items-center justify-between md:justify-end gap-6">
                                                 {getStatusBadge(order.status)}
-                                            </td>
 
-                                            {/* Kolom 5: Aksi */}
-                                            <td className="px-6 py-4 text-right">
-                                                <div className="flex items-center justify-end gap-2 opacity-100 group-hover:opacity-100 transition-opacity">
-                                                    <a
-                                                        href={route('orders.invoice', order.id)}
-                                                        target="_blank"
-                                                        className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors border border-transparent hover:border-slate-200"
-                                                        title="Cetak Invoice"
-                                                    >
-                                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-                                                    </a>
-
-                                                    <Link
-                                                        href={route('orders.edit', order.id)}
-                                                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-slate-900 rounded-lg hover:bg-slate-800 transition-all shadow-sm hover:shadow-md"
-                                                    >
-                                                        Detail
-                                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-                                                    </Link>
+                                                <div className="text-right hidden sm:block">
+                                                    <p className="text-sm font-bold text-slate-900 dark:text-white font-mono">{rupiah(order.total_amount)}</p>
+                                                    <p className={`text-[10px] font-bold uppercase ${order.payment_status === 'paid' ? 'text-emerald-500' : 'text-orange-500'}`}>
+                                                        {order.payment_status === 'paid' ? 'LUNAS' : 'BELUM'}
+                                                    </p>
                                                 </div>
-                                            </td>
 
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
+                                                <div className="text-slate-300 dark:text-zinc-600 group-hover:text-indigo-500 transition-transform group-hover:translate-x-1">
+                                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </Link>
+                                ))
+                            )}
+                        </div>
+
+                        {/* PAGINATION SIMPLE */}
+                        <div className="p-4 border-t border-gray-200 dark:border-zinc-800 bg-gray-50/50 dark:bg-black/20 flex justify-center">
+                             <div className="flex gap-2">
+                                {orders.links.map((link: any, index: number) => (
+                                    link.url ? (
+                                        <Link
+                                            key={index}
+                                            href={link.url}
+                                            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${link.active ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:bg-white dark:hover:bg-zinc-800 hover:shadow-sm'}`}
+                                            dangerouslySetInnerHTML={{ __html: link.label }}
+                                        />
+                                    ) : null
+                                ))}
+                            </div>
+                        </div>
+
                     </div>
+
                 </div>
             </div>
         </AppLayout>

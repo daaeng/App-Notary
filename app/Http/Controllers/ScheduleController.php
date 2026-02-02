@@ -5,43 +5,44 @@ namespace App\Http\Controllers;
 use App\Models\Schedule;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Carbon\Carbon;
 
 class ScheduleController extends Controller
 {
-    // Tampilkan Daftar Agenda (Diurutkan dari yang terdekat)
     public function index()
     {
-        $schedules = Schedule::orderBy('start_time', 'asc')
-            ->whereDate('start_time', '>=', now()->subDays(1)) // Tampilkan dari kemarin ke depan
-            ->paginate(10);
+        // Ambil semua jadwal untuk kalender
+        $events = Schedule::orderBy('start_time')->get()->map(function ($event) {
+            return [
+                'id' => $event->id,
+                'title' => $event->title,
+                'start' => $event->start_time,
+                'end' => $event->end_time,
+                'color' => $event->color, // red, blue, green, amber, purple
+                'location' => $event->location,
+                'description' => $event->description,
+            ];
+        });
 
         return Inertia::render('Schedules/Index', [
-            'schedules' => $schedules
+            'events' => $events
         ]);
     }
 
-    // Simpan Agenda Baru
     public function store(Request $request)
     {
         $request->validate([
             'title' => 'required|string|max:255',
             'start_time' => 'required|date',
+            'end_time' => 'required|date|after_or_equal:start_time',
             'color' => 'required|string',
         ]);
 
-        Schedule::create([
-            'title' => $request->title,
-            'start_time' => $request->start_time,
-            'end_time' => $request->end_time,
-            'location' => $request->location,
-            'color' => $request->color,
-            'description' => $request->description,
-        ]);
+        Schedule::create($request->all());
 
-        return back()->with('success', 'Agenda berhasil dijadwalkan!');
+        return back()->with('success', 'Agenda berhasil ditambahkan.');
     }
 
-    // Hapus Agenda
     public function destroy(Schedule $schedule)
     {
         $schedule->delete();

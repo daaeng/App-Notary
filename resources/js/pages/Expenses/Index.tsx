@@ -1,4 +1,4 @@
-import { FormEventHandler } from 'react';
+import { FormEventHandler, useMemo } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { Head, useForm, router } from '@inertiajs/react';
 import { PageProps } from '@/types';
@@ -17,8 +17,8 @@ interface Props extends PageProps {
     expenses: { data: Expense[]; links: any[] };
 }
 
-export default function ExpenseIndex({ expenses }: Props) {
-    const { data, setData, post, processing, reset, errors } = useForm({
+export default function ExpenseWallet({ expenses }: Props) {
+    const { data, setData, post, processing, reset } = useForm({
         title: '',
         amount: '',
         transaction_date: new Date().toISOString().split('T')[0],
@@ -32,203 +32,248 @@ export default function ExpenseIndex({ expenses }: Props) {
     };
 
     const deleteExpense = (id: number) => {
-        if (confirm('Hapus data pengeluaran ini?')) {
+        if (confirm('Batalkan transaksi ini?')) {
             router.delete(route('expenses.destroy', id));
         }
     };
 
     const rupiah = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
-    // Helper Ikon Kategori
-    const getCategoryIcon = (cat: string) => {
-        if (cat.includes('Gaji')) return '👥';
-        if (cat.includes('ATK')) return '📎';
-        if (cat.includes('Konsumsi')) return '☕';
-        if (cat.includes('Transport')) return '⛽';
-        return '💰';
-    };
+    // Hitung Total & Kategori (Client Side Simulation)
+    const totalAmount = useMemo(() => expenses.data.reduce((acc, curr) => acc + Number(curr.amount), 0), [expenses.data]);
+
+    // Hitung total per kategori untuk progress bar
+    const categoryStats = useMemo(() => {
+        const stats: any = {};
+        expenses.data.forEach(item => {
+            stats[item.category] = (stats[item.category] || 0) + Number(item.amount);
+        });
+        return stats;
+    }, [expenses.data]);
 
     const categories = ['Operasional', 'Gaji Staff', 'ATK & Kertas', 'Konsumsi', 'Transport', 'Biaya Taktis', 'Lainnya'];
 
-    // Style Input Dark Mode (Sama seperti Order Edit)
-    const inputClasses = "mt-1 block w-full rounded-xl bg-slate-900/50 border border-slate-700 text-slate-100 placeholder-slate-500 shadow-sm focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-base py-3 px-4 transition-all";
-    const labelClasses = "block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1";
-
     return (
         <AppLayout breadcrumbs={[{ title: 'Keuangan', href: '/expenses' }]}>
-            <Head title="Pengeluaran Kantor" />
+            <Head title="Dompet Kantor" />
 
-            <div className="min-h-screen bg-slate-50/50 p-6 lg:p-8 font-sans">
-                <div className="w-full">
+            <div className="min-h-screen bg-slate-50 dark:bg-black font-sans transition-colors duration-300 p-4 lg:p-8">
+                <div className="w-full mx-auto">
 
-                    <div className="flex justify-between items-end mb-6">
-                        <div>
-                            <h1 className="text-2xl font-bold text-slate-800">Pengeluaran Operasional</h1>
-                            <p className="text-slate-500 text-sm">Catat semua biaya keluar untuk operasional kantor.</p>
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+                        {/* === KOLOM KIRI (4 Cols): KARTU & ANALISIS === */}
+                        <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-8">
+
+                            {/* 1. VISUAL CREDIT CARD */}
+                            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-800 to-black p-8 text-white shadow-2xl shadow-slate-900/40 border border-slate-700/50 group hover:scale-[1.02] transition-transform duration-500">
+                                {/* Efek Glossy */}
+                                <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl"></div>
+                                <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 bg-indigo-500 opacity-10 rounded-full blur-3xl"></div>
+
+                                <div className="relative z-10 flex flex-col justify-between h-48">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">Total Pengeluaran</p>
+                                            <p className="text-xs text-slate-500 mt-1">Halaman Ini</p>
+                                        </div>
+                                        <div className="text-2xl opacity-80">💳</div>
+                                    </div>
+
+                                    <div>
+                                        <h2 className="text-3xl md:text-4xl font-mono font-black tracking-tight text-white mb-1">
+                                            {rupiah(totalAmount)}
+                                        </h2>
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <span className="px-2 py-0.5 rounded bg-red-500/20 text-red-300 text-[10px] font-bold uppercase border border-red-500/30">
+                                                Cash Out
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex justify-between items-end">
+                                        <div>
+                                            <p className="text-[10px] text-slate-500 uppercase">Pemegang Kartu</p>
+                                            <p className="text-sm font-bold tracking-widest uppercase">KANTOR NOTARIS</p>
+                                        </div>
+                                        <div className="w-12 h-8 bg-white/10 rounded flex items-center justify-center">
+                                            <div className="w-6 h-4 border border-white/30 rounded-sm flex items-center justify-center">
+                                                <div className="w-full h-[1px] bg-white/30"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 2. CATEGORY BREAKDOWN */}
+                            <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-gray-200 dark:border-zinc-800 shadow-sm">
+                                <h3 className="font-bold text-slate-800 dark:text-white mb-4 text-sm uppercase tracking-wide">
+                                    Pos Pengeluaran
+                                </h3>
+                                <div className="space-y-4">
+                                    {Object.entries(categoryStats).map(([cat, amount]: [string, any], idx) => {
+                                        const percent = Math.min((amount / totalAmount) * 100, 100) || 0;
+                                        const colors = ['bg-indigo-500', 'bg-rose-500', 'bg-amber-500', 'bg-emerald-500', 'bg-cyan-500'];
+                                        const color = colors[idx % colors.length];
+
+                                        return (
+                                            <div key={cat}>
+                                                <div className="flex justify-between text-xs mb-1 font-bold text-slate-600 dark:text-zinc-400">
+                                                    <span>{cat}</span>
+                                                    <span>{Math.round(percent)}%</span>
+                                                </div>
+                                                <div className="w-full bg-gray-100 dark:bg-zinc-800 h-2 rounded-full overflow-hidden">
+                                                    <div className={`h-full ${color}`} style={{ width: `${percent}%` }}></div>
+                                                </div>
+                                                <div className="text-right mt-0.5">
+                                                    <span className="text-[10px] font-mono text-slate-400">{rupiah(amount)}</span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                    {Object.keys(categoryStats).length === 0 && (
+                                        <p className="text-center text-xs text-slate-400 italic py-2">Belum ada data statistik.</p>
+                                    )}
+                                </div>
+                            </div>
+
                         </div>
-                    </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        {/* === KOLOM KANAN (8 Cols): FORM & LIST === */}
+                        <div className="lg:col-span-8 space-y-8">
 
-                        {/* === KIRI: FORM INPUT (DARK MODE PREMIUM) === */}
-                        <div className="relative overflow-hidden bg-slate-950 p-8 rounded-[2rem] border border-slate-800/50 shadow-2xl h-fit">
-                            {/* Dekorasi Background */}
-                            <div className="absolute top-0 right-0 w-40 h-40 bg-red-500/10 rounded-full blur-3xl pointer-events-none"></div>
-                            <div className="absolute bottom-0 left-0 w-40 h-40 bg-orange-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-                            <div className="relative z-10">
-                                <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2 border-b border-slate-800 pb-4">
-                                    <span className="w-2 h-6 bg-red-500 rounded-full"></span>
-                                    Catat Pengeluaran Baru
+                            {/* FORM INPUT (Clean Horizontal) */}
+                            <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 md:p-8 border border-gray-200 dark:border-zinc-800 shadow-sm">
+                                <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
+                                    <span className="w-2 h-6 bg-rose-500 rounded-full"></span>
+                                    Input Transaksi Baru
                                 </h3>
 
-                                <form onSubmit={submit} className="space-y-5">
-                                    {/* Nama Pengeluaran */}
-                                    <div>
-                                        <label className={labelClasses}>Nama Pengeluaran</label>
+                                <form onSubmit={submit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div className="md:col-span-2">
+                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 block">Nama Transaksi</label>
                                         <input
                                             type="text"
                                             value={data.title}
                                             onChange={e => setData('title', e.target.value)}
-                                            placeholder="Contoh: Beli Kertas F4 5 Rim"
-                                            className={inputClasses}
+                                            className="w-full bg-slate-50 dark:bg-black border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-3 focus:ring-rose-500 focus:border-rose-500 text-slate-800 dark:text-white font-bold"
+                                            placeholder="Contoh: Pembayaran Listrik"
                                             required
                                         />
                                     </div>
 
-                                    {/* Nominal & Tanggal */}
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className={labelClasses}>Jumlah (Rp)</label>
-                                            <input
-                                                type="number"
-                                                value={data.amount}
-                                                onChange={e => setData('amount', e.target.value)}
-                                                className={`${inputClasses} font-mono text-red-300`}
-                                                placeholder="0"
-                                                required
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className={labelClasses}>Tanggal</label>
-                                            <input
-                                                type="date"
-                                                value={data.transaction_date}
-                                                onChange={e => setData('transaction_date', e.target.value)}
-                                                className={inputClasses}
-                                                required
-                                            />
-                                        </div>
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 block">Nominal (Rp)</label>
+                                        <input
+                                            type="number"
+                                            value={data.amount}
+                                            onChange={e => setData('amount', e.target.value)}
+                                            className="w-full bg-slate-50 dark:bg-black border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-3 focus:ring-rose-500 focus:border-rose-500 text-rose-600 dark:text-rose-500 font-mono font-black"
+                                            placeholder="0"
+                                            required
+                                        />
                                     </div>
 
-                                    {/* Kategori */}
                                     <div>
-                                        <label className={labelClasses}>Kategori</label>
+                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 block">Tanggal</label>
+                                        <input
+                                            type="date"
+                                            value={data.transaction_date}
+                                            onChange={e => setData('transaction_date', e.target.value)}
+                                            className="w-full bg-slate-50 dark:bg-black border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-3 focus:ring-rose-500 focus:border-rose-500 text-slate-800 dark:text-white"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 block">Kategori</label>
                                         <select
                                             value={data.category}
                                             onChange={e => setData('category', e.target.value)}
-                                            className={inputClasses}
+                                            className="w-full bg-slate-50 dark:bg-black border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-3 focus:ring-rose-500 focus:border-rose-500 text-slate-800 dark:text-white"
                                         >
                                             {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                                         </select>
                                     </div>
 
-                                    {/* Keterangan */}
                                     <div>
-                                        <label className={labelClasses}>Keterangan (Opsional)</label>
-                                        <textarea
+                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 block">Catatan (Opsional)</label>
+                                        <input
+                                            type="text"
                                             value={data.description}
                                             onChange={e => setData('description', e.target.value)}
-                                            rows={2}
-                                            className={inputClasses}
-                                            placeholder="Detail tambahan..."
-                                        ></textarea>
+                                            className="w-full bg-slate-50 dark:bg-black border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-3 focus:ring-rose-500 focus:border-rose-500 text-slate-800 dark:text-white"
+                                            placeholder="..."
+                                        />
                                     </div>
 
-                                    {/* Tombol Simpan */}
-                                    <button
-                                        type="submit"
-                                        disabled={processing}
-                                        className="w-full py-4 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-bold text-lg rounded-xl shadow-lg shadow-red-900/30 transform hover:-translate-y-1 transition-all duration-300 mt-4"
-                                    >
-                                        {processing ? 'Menyimpan...' : '💸 Simpan Pengeluaran'}
-                                    </button>
+                                    <div className="md:col-span-2">
+                                        <button
+                                            type="submit"
+                                            disabled={processing}
+                                            className="w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-black font-bold rounded-xl hover:opacity-90 transition shadow-lg flex justify-center items-center gap-2"
+                                        >
+                                            {processing ? '...' : '💸 Simpan Transaksi'}
+                                        </button>
+                                    </div>
                                 </form>
                             </div>
-                        </div>
 
-                        {/* === KANAN: TABEL RIWAYAT (CLEAN WHITE) === */}
-                        <div className="lg:col-span-2 flex flex-col h-full">
-                            <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 overflow-hidden flex-1">
-                                <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                                    <h3 className="font-bold text-slate-800 text-lg">Riwayat Transaksi</h3>
-                                    <span className="text-xs font-bold text-slate-400 bg-white px-3 py-1 rounded-full border border-slate-100 shadow-sm">
-                                        Terbaru
-                                    </span>
-                                </div>
+                            {/* TRANSACTION LIST (Feed Style) */}
+                            <div>
+                                <h3 className="font-bold text-slate-500 dark:text-zinc-500 text-xs uppercase tracking-widest mb-4 ml-2">Mutasi Terakhir</h3>
+                                <div className="space-y-4">
+                                    {expenses.data.length === 0 ? (
+                                        <div className="text-center py-12 bg-white dark:bg-zinc-900 rounded-3xl border border-dashed border-gray-300 dark:border-zinc-800">
+                                            <p className="text-3xl opacity-30 mb-2">🏷️</p>
+                                            <p className="text-sm text-slate-400">Belum ada transaksi.</p>
+                                        </div>
+                                    ) : (
+                                        expenses.data.map((item) => (
+                                            <div key={item.id} className="group flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-800 hover:border-rose-500/30 hover:shadow-lg transition-all">
 
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-left">
-                                        <thead className="bg-slate-50 text-slate-400 font-bold uppercase text-[11px] tracking-wider">
-                                            <tr>
-                                                <th className="px-8 py-4">Tanggal</th>
-                                                <th className="px-6 py-4">Keterangan</th>
-                                                <th className="px-6 py-4 text-center">Kategori</th>
-                                                <th className="px-6 py-4 text-right">Nominal</th>
-                                                <th className="px-6 py-4 text-center">Aksi</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100">
-                                            {expenses.data.length === 0 ? (
-                                                <tr>
-                                                    <td colSpan={5} className="px-6 py-12 text-center text-slate-400 italic bg-slate-50/30">
-                                                        <div className="text-4xl mb-2">🍃</div>
-                                                        Belum ada data pengeluaran.
-                                                    </td>
-                                                </tr>
-                                            ) : (
-                                                expenses.data.map((item) => (
-                                                    <tr key={item.id} className="hover:bg-slate-50/80 transition-colors group">
-                                                        <td className="px-8 py-5 whitespace-nowrap text-sm text-slate-500">
-                                                            {new Date(item.transaction_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                                        </td>
-                                                        <td className="px-6 py-5">
-                                                            <div className="font-bold text-slate-700 text-sm group-hover:text-red-600 transition-colors">
-                                                                {item.title}
-                                                            </div>
-                                                            {item.description && (
-                                                                <div className="text-xs text-slate-400 mt-1 truncate max-w-[200px]">
-                                                                    {item.description}
-                                                                </div>
-                                                            )}
-                                                        </td>
-                                                        <td className="px-6 py-5 text-center">
-                                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold border border-slate-200">
-                                                                <span>{getCategoryIcon(item.category)}</span>
+                                                <div className="flex items-start gap-4">
+                                                    <div className="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-gray-50 dark:bg-black border border-gray-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 font-bold shrink-0">
+                                                        <span className="text-[9px] uppercase leading-none opacity-70">{new Date(item.transaction_date).toLocaleString('id-ID', { month: 'short' })}</span>
+                                                        <span className="text-lg leading-none">{new Date(item.transaction_date).getDate()}</span>
+                                                    </div>
+
+                                                    <div>
+                                                        <h4 className="font-bold text-slate-800 dark:text-white text-base group-hover:text-rose-600 transition-colors">
+                                                            {item.title}
+                                                        </h4>
+                                                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                                                            <span className="text-[10px] font-bold uppercase bg-gray-100 dark:bg-zinc-800 px-2 py-0.5 rounded text-slate-500 dark:text-zinc-400">
                                                                 {item.category}
                                                             </span>
-                                                        </td>
-                                                        <td className="px-6 py-5 text-right font-mono font-bold text-red-500 text-sm">
-                                                            -{rupiah(item.amount)}
-                                                        </td>
-                                                        <td className="px-6 py-5 text-center">
-                                                            <button
-                                                                onClick={() => deleteExpense(item.id)}
-                                                                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 hover:text-red-600 hover:bg-red-50 transition-all"
-                                                                title="Hapus"
-                                                            >
-                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                                </svg>
-                                                            </button>
-                                                        </td>
-                                                    </tr>
-                                                ))
-                                            )}
-                                        </tbody>
-                                    </table>
+                                                            {item.description && (
+                                                                <span className="text-xs text-slate-400 dark:text-zinc-500 italic truncate max-w-[200px]">
+                                                                    — {item.description}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto mt-3 sm:mt-0 gap-6 border-t sm:border-t-0 border-gray-100 dark:border-zinc-800 pt-3 sm:pt-0">
+                                                    <p className="font-mono font-black text-rose-600 dark:text-rose-500 text-lg">
+                                                        -{rupiah(item.amount)}
+                                                    </p>
+                                                    <button
+                                                        onClick={() => deleteExpense(item.id)}
+                                                        className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
+                                                        title="Hapus"
+                                                    >
+                                                        ✕
+                                                    </button>
+                                                </div>
+
+                                            </div>
+                                        ))
+                                    )}
                                 </div>
                             </div>
+
                         </div>
 
                     </div>

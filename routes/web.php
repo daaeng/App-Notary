@@ -28,55 +28,47 @@ Route::get('/', function () {
 // --- AREA LOGIN ---
 Route::middleware(['auth', 'verified'])->group(function () {
 
-    // 1. DASHBOARD
+    // 1. DASHBOARD (Updated Logic)
     Route::get('dashboard', function () {
-        $totalOrders = Order::count();
-        $ordersNew = Order::where('status', 'new')->count();
-        $ordersProcess = Order::whereIn('status', ['process', 'draft'])->count();
-        $ordersDone = Order::where('status', 'done')->count();
-
         $currentMonth = Carbon::now()->month;
         $currentYear = Carbon::now()->year;
 
-        // --- PERBAIKAN LOGIC KEUANGAN (REAL CASHFLOW) ---
+        // A. Statistik Order
+        $totalOrders = Order::count();
+        $activeOrders = Order::whereIn('status', ['new', 'draft', 'process', 'minuta'])->count();
+        $completedOrders = Order::where('status', 'done')->whereMonth('updated_at', $currentMonth)->count();
+        $totalClients = \App\Models\Client::count(); // Tambahan: Total Klien
 
-        // SEBELUMNYA (Salah): Menghitung total harga order (walau belum bayar)
-        // $revenueMonth = Order::whereMonth('created_at', $currentMonth)...
-
-        // SEKARANG (Benar): Menghitung uang ASLI yang diterima kasir
+        // B. Keuangan (Real Cashflow Logic - Pertahankan yang sudah benar)
         $revenueMonth = \App\Models\Payment::whereMonth('payment_date', $currentMonth)
             ->whereYear('payment_date', $currentYear)
             ->sum('amount');
 
-        // Pengeluaran: Tetap dari tabel Expense
         $expenseMonth = Expense::whereMonth('transaction_date', $currentMonth)
             ->whereYear('transaction_date', $currentYear)
             ->sum('amount');
 
-        // Profit Bersih = Uang Masuk - Uang Keluar
         $netProfit = $revenueMonth - $expenseMonth;
 
-        // Jadwal Terdekat
+        // C. Data Pendukung
         $upcomingSchedules = Schedule::where('start_time', '>=', now())
             ->orderBy('start_time', 'asc')
-            ->limit(3)
+            ->take(5) // Ambil 5 agenda terdekat
             ->get();
 
-        // Order Terbaru
         $recentOrders = Order::with(['client', 'service'])
             ->latest()
-            ->limit(5)
+            ->take(5)
             ->get();
 
         return Inertia::render('dashboard', [
             'stats' => [
-                'total' => $totalOrders,
-                'new' => $ordersNew,
-                'process' => $ordersProcess,
-                'done' => $ordersDone,
-                'revenue' => $revenueMonth, // Angka ini sekarang JUJUR (Real Cash)
-                'expense' => $expenseMonth,
-                'profit' => $netProfit
+                'active_orders' => $activeOrders, // Order berjalan
+                'completed_month' => $completedOrders, // Selesai bulan ini
+                'total_clients' => $totalClients, // Jumlah Klien
+                'revenue' => $revenueMonth, // Uang Masuk Real
+                'expense' => $expenseMonth, // Uang Keluar
+                'profit' => $netProfit // Laba Bersih
             ],
             'recentOrders' => $recentOrders,
             'upcomingSchedules' => $upcomingSchedules

@@ -13,10 +13,13 @@ class UserController extends Controller
 {
     public function index()
     {
+        // Ambil user beserta rolenya, urutkan terbaru
+        $users = User::with('roles')->latest()->get();
+        $roles = Role::all();
+
         return Inertia::render('Users/Index', [
-            'users' => User::with('roles')->latest()->get(),
-            // Mengirim data role agar dropdown di frontend tidak kosong
-            'roles' => Role::all()
+            'users' => $users,
+            'roles' => $roles
         ]);
     }
 
@@ -35,9 +38,10 @@ class UserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
+        // Assign Role Spatie
         $user->assignRole($request->role);
 
-        return redirect()->back()->with('success', 'Pengguna baru berhasil ditambahkan!');
+        return back()->with('success', 'Anggota tim berhasil ditambahkan.');
     }
 
     public function update(Request $request, User $user)
@@ -46,7 +50,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
             'role' => 'required|exists:roles,name',
-            'password' => 'nullable|string|min:8',
+            'password' => 'nullable|string|min:8', // Password opsional saat edit
         ]);
 
         $user->update([
@@ -54,25 +58,26 @@ class UserController extends Controller
             'email' => $request->email,
         ]);
 
+        // Update password HANYA jika diisi
         if ($request->filled('password')) {
             $user->update(['password' => Hash::make($request->password)]);
         }
 
+        // Sync Role (Ganti jabatan)
         $user->syncRoles([$request->role]);
 
-        return redirect()->back()->with('success', 'Data pengguna diperbarui!');
+        return back()->with('success', 'Data pengguna diperbarui.');
     }
 
     public function destroy(User $user)
     {
-        // Cek Policy dulu sebelum eksekusi
-        // Jika Bos yang klik, dia akan kena Error 403 (Forbidden)
-        if (request()->user()->cannot('delete', $user)) {
-            abort(403, 'Maaf Bos, Anda tidak memiliki akses untuk menghapus data ini.');
+        // PENGAMAN: Jangan biarkan user menghapus dirinya sendiri
+        if (auth()->id() === $user->id) {
+            return back()->withErrors(['error' => 'Anda tidak bisa menghapus akun Anda sendiri!']);
         }
 
         $user->delete();
 
-        return redirect()->back()->with('success', 'Data berhasil dihapus');
+        return back()->with('success', 'Pengguna berhasil dihapus.');
     }
 }

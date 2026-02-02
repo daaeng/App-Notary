@@ -1,28 +1,31 @@
-import { FormEventHandler } from 'react';
+import { useState, FormEventHandler, useMemo } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { Head, useForm, router } from '@inertiajs/react';
 import { PageProps } from '@/types';
+import { route } from 'ziggy-js';
 
-interface Schedule {
+interface Event {
     id: number;
     title: string;
-    start_time: string;
-    location: string;
+    start: string;
+    end: string;
     color: string;
-    description: string;
+    location?: string;
+    description?: string;
 }
 
 interface Props extends PageProps {
-    schedules: { data: Schedule[]; links: any[] };
+    events: Event[];
 }
 
-export default function ScheduleIndex({ schedules }: Props) {
-    const { data, setData, post, processing, reset, errors } = useForm({
+export default function ScheduleGlass({ events = [] }: Props) {
+    const { data, setData, post, processing, reset } = useForm({
         title: '',
         start_time: '',
+        end_time: '',
         location: '',
-        color: 'blue',
         description: '',
+        color: 'blue',
     });
 
     const submit: FormEventHandler = (e) => {
@@ -30,108 +33,248 @@ export default function ScheduleIndex({ schedules }: Props) {
         post(route('schedules.store'), { onSuccess: () => reset() });
     };
 
-    const deleteSchedule = (id: number) => {
+    const deleteEvent = (id: number) => {
         if (confirm('Hapus agenda ini?')) router.delete(route('schedules.destroy', id));
     };
 
-    // Helper Format Tanggal Cantik (Senin, 20 Jan 2026 - 10:00)
-    const formatDateTime = (dateString: string) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-    };
+    // --- LOGIC ---
+    const sortedEvents = useMemo(() => {
+        return (Array.isArray(events) ? events : []).sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+    }, [events]);
 
-    // Helper Warna
-    const getColorClass = (color: string) => {
+    const nextEvent = useMemo(() => {
+        const now = new Date();
+        return sortedEvents.find(e => new Date(e.end) > now);
+    }, [sortedEvents]);
+
+    const upcomingList = useMemo(() => {
+        const now = new Date();
+        // Tampilkan semua event setelah "Next Event", atau semua event jika next event null
+        if (!nextEvent) return sortedEvents.filter(e => new Date(e.end) > now);
+        return sortedEvents.filter(e => e.id !== nextEvent.id && new Date(e.end) > now);
+    }, [sortedEvents, nextEvent]);
+
+    // Helper Gradient Text
+    const getGradientText = (color: string) => {
         const map: any = {
-            blue: 'bg-blue-100 text-blue-700 border-blue-200',
-            red: 'bg-red-100 text-red-700 border-red-200',
-            green: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-            yellow: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-            purple: 'bg-purple-100 text-purple-700 border-purple-200',
+            blue: 'from-blue-600 to-cyan-500',
+            red: 'from-rose-600 to-orange-500',
+            green: 'from-emerald-600 to-teal-500',
+            amber: 'from-amber-600 to-yellow-500',
+            purple: 'from-purple-600 to-pink-500',
         };
         return map[color] || map.blue;
     };
 
     return (
         <AppLayout breadcrumbs={[{ title: 'Agenda', href: '/schedules' }]}>
-            <Head title="Jadwal Kegiatan" />
+            <Head title="Glass Horizon" />
 
-            <div className="min-h-screen bg-slate-50/50 p-6 lg:p-8 font-sans">
-                <div className="max-w-6xl mx-auto">
-                    <h1 className="text-2xl font-bold text-slate-800 mb-6">Agenda & Jadwal Kantor 📅</h1>
+            {/* BACKGROUND ANIMATED GRADIENT */}
+            <div className="fixed inset-0 -z-10 bg-gray-50 dark:bg-slate-900">
+                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 dark:from-slate-900 dark:via-purple-900/20 dark:to-slate-900 opacity-60"></div>
+                <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-blue-400/20 rounded-full blur-[100px] pointer-events-none"></div>
+                <div className="absolute bottom-[-10%] left-[-5%] w-[500px] h-[500px] bg-purple-400/20 rounded-full blur-[100px] pointer-events-none"></div>
+            </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="min-h-screen bg-gray-50 dark:bg-black font-sans p-4 lg:p-8">
+                <div className="w-full mx-auto">
 
-                        {/* FORM INPUT */}
-                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 h-fit">
-                            <h3 className="font-bold text-lg mb-4 text-slate-700">Buat Agenda Baru</h3>
-                            <form onSubmit={submit} className="space-y-4">
-                                <div>
-                                    <label className="text-xs font-bold text-slate-500">Judul Kegiatan</label>
-                                    <input type="text" value={data.title} onChange={e => setData('title', e.target.value)} placeholder="Misal: Tanda Tangan Akta PT..." className="w-full rounded-lg border-slate-300 text-sm mt-1" required />
-                                </div>
-                                <div>
-                                    <label className="text-xs font-bold text-slate-500">Waktu Pelaksanaan</label>
-                                    <input type="datetime-local" value={data.start_time} onChange={e => setData('start_time', e.target.value)} className="w-full rounded-lg border-slate-300 text-sm mt-1" required />
-                                </div>
-                                <div>
-                                    <label className="text-xs font-bold text-slate-500">Lokasi</label>
-                                    <input type="text" value={data.location} onChange={e => setData('location', e.target.value)} placeholder="Kantor / BPN / Bank" className="w-full rounded-lg border-slate-300 text-sm mt-1" />
-                                </div>
-                                <div>
-                                    <label className="text-xs font-bold text-slate-500">Label Warna</label>
-                                    <div className="flex gap-2 mt-2">
-                                        {['blue', 'green', 'red', 'yellow', 'purple'].map(c => (
-                                            <button type="button" key={c} onClick={() => setData('color', c)}
-                                                className={`w-6 h-6 rounded-full border-2 ${data.color === c ? 'border-slate-600 scale-110' : 'border-transparent'} bg-${c === 'green' ? 'emerald' : c}-500`}>
-                                            </button>
-                                        ))}
+                    {/* Header */}
+                    <div className="mb-8 flex items-end justify-between">
+                        <div>
+                            <h1 className="text-4xl font-black text-slate-800 dark:text-white tracking-tighter mb-1">
+                                Hello, Notaris.
+                            </h1>
+                            <p className="text-slate-500 dark:text-slate-400 font-medium">
+                                {new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+                        {/* === KIRI (7 Cols): FOCUS AREA & FORM === */}
+                        <div className="lg:col-span-7 space-y-8">
+
+                            {/* GLASS CARD: NEXT EVENT */}
+                            <div className="relative overflow-hidden rounded-[2.5rem] p-8 shadow-2xl border border-white/50 dark:border-white/10 bg-white/40 dark:bg-black/40 backdrop-blur-xl transition hover:scale-[1.01] duration-500 group">
+                                <div className="absolute top-0 left-0 w-2 h-full bg-gradient-to-b from-indigo-500 to-purple-500"></div>
+
+                                {nextEvent ? (
+                                    <div className="relative z-10">
+                                        <div className="flex justify-between items-start mb-6">
+                                            <span className="px-4 py-1.5 rounded-full bg-white/50 dark:bg-black/50 text-xs font-bold uppercase tracking-widest text-slate-600 dark:text-slate-300 backdrop-blur-md shadow-sm">
+                                                Sedang Berlangsung
+                                            </span>
+                                            {nextEvent.location && (
+                                                <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-sm font-medium">
+                                                    📍 {nextEvent.location}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        <h2 className={`text-4xl md:text-5xl font-black bg-clip-text text-transparent bg-gradient-to-r ${getGradientText(nextEvent.color)} mb-4 leading-tight`}>
+                                            {nextEvent.title}
+                                        </h2>
+
+                                        <div className="flex items-center gap-4 text-slate-700 dark:text-slate-200">
+                                            <div className="p-3 bg-white/50 dark:bg-white/10 rounded-2xl backdrop-blur-sm">
+                                                <p className="text-xs uppercase opacity-60 font-bold">Mulai</p>
+                                                <p className="text-xl font-mono font-bold">
+                                                    {new Date(nextEvent.start).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                                </p>
+                                            </div>
+                                            <div className="h-px w-8 bg-slate-400/50"></div>
+                                            <div className="p-3 bg-white/50 dark:bg-white/10 rounded-2xl backdrop-blur-sm">
+                                                <p className="text-xs uppercase opacity-60 font-bold">Selesai</p>
+                                                <p className="text-xl font-mono font-bold">
+                                                    {new Date(nextEvent.end).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            onClick={() => deleteEvent(nextEvent.id)}
+                                            className="absolute bottom-8 right-8 w-10 h-10 flex items-center justify-center rounded-full bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white transition opacity-0 group-hover:opacity-100"
+                                        >
+                                            ✕
+                                        </button>
                                     </div>
-                                </div>
-                                <div>
-                                    <label className="text-xs font-bold text-slate-500">Catatan</label>
-                                    <textarea value={data.description} onChange={e => setData('description', e.target.value)} className="w-full rounded-lg border-slate-300 text-sm mt-1" rows={2}></textarea>
-                                </div>
-                                <button type="submit" disabled={processing} className="w-full py-3 bg-slate-800 text-white font-bold rounded-xl hover:bg-slate-700 transition shadow-lg">
-                                    + Tambah Jadwal
-                                </button>
-                            </form>
+                                ) : (
+                                    <div className="text-center py-10 opacity-60">
+                                        <p className="text-4xl mb-2">✨</p>
+                                        <h3 className="text-xl font-bold text-slate-800 dark:text-white">Agenda Kosong</h3>
+                                        <p className="text-sm">Tidak ada jadwal mendesak saat ini.</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* GLASS FORM */}
+                            <div className="rounded-[2.5rem] p-8 shadow-xl border border-white/50 dark:border-white/10 bg-white/60 dark:bg-black/60 backdrop-blur-lg">
+                                <h3 className="font-bold text-lg text-slate-800 dark:text-white mb-6 flex items-center gap-2">
+                                    <span className="w-8 h-8 rounded-full bg-slate-800 dark:bg-white flex items-center justify-center text-white dark:text-black text-sm">✍️</span>
+                                    Buat Agenda Baru
+                                </h3>
+
+                                <form onSubmit={submit} className="space-y-5">
+                                    <input
+                                        type="text"
+                                        value={data.title} onChange={e => setData('title', e.target.value)}
+                                        placeholder="Judul Kegiatan..."
+                                        className="w-full bg-white/50 dark:bg-black/50 border-transparent focus:border-indigo-500 rounded-2xl px-5 py-4 text-sm font-medium placeholder-slate-400 focus:ring-0 shadow-sm"
+                                        required
+                                    />
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-white/50 dark:bg-black/50 rounded-2xl px-4 py-2 shadow-sm">
+                                            <label className="text-[10px] font-bold text-slate-400 uppercase">Mulai</label>
+                                            <input
+                                                type="datetime-local"
+                                                value={data.start_time} onChange={e => setData('start_time', e.target.value)}
+                                                className="w-full bg-transparent border-none p-0 text-xs font-mono font-bold focus:ring-0"
+                                                required
+                                            />
+                                        </div>
+                                        <div className="bg-white/50 dark:bg-black/50 rounded-2xl px-4 py-2 shadow-sm">
+                                            <label className="text-[10px] font-bold text-slate-400 uppercase">Selesai</label>
+                                            <input
+                                                type="datetime-local"
+                                                value={data.end_time} onChange={e => setData('end_time', e.target.value)}
+                                                className="w-full bg-transparent border-none p-0 text-xs font-mono font-bold focus:ring-0"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex-1 bg-white/50 dark:bg-black/50 rounded-2xl px-4 py-2 shadow-sm flex items-center gap-2">
+                                            <span className="text-slate-400">📍</span>
+                                            <input
+                                                type="text"
+                                                value={data.location} onChange={e => setData('location', e.target.value)}
+                                                placeholder="Lokasi..."
+                                                className="w-full bg-transparent border-none p-0 text-sm focus:ring-0 placeholder-slate-400"
+                                            />
+                                        </div>
+                                        <div className="flex gap-1 bg-white/50 dark:bg-black/50 p-2 rounded-2xl shadow-sm">
+                                            {['blue', 'red', 'green'].map(c => (
+                                                <button
+                                                    key={c} type="button"
+                                                    onClick={() => setData('color', c)}
+                                                    className={`w-6 h-6 rounded-full transition-transform ${data.color === c ? 'scale-125 ring-2 ring-indigo-500' : 'opacity-40 hover:opacity-100'} bg-${c}-500`}
+                                                ></button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        type="submit" disabled={processing}
+                                        className="w-full py-4 bg-slate-800 dark:bg-white text-white dark:text-black font-bold rounded-2xl shadow-lg hover:scale-[1.02] transition-transform"
+                                    >
+                                        Simpan Agenda
+                                    </button>
+                                </form>
+                            </div>
+
                         </div>
 
-                        {/* LIST AGENDA */}
-                        <div className="lg:col-span-2 space-y-4">
-                            {schedules.data.length === 0 ? (
-                                <div className="p-8 text-center bg-white rounded-2xl border border-dashed border-slate-300">
-                                    <p className="text-slate-400 italic">Belum ada agenda mendatang.</p>
-                                </div>
-                            ) : (
-                                schedules.data.map((item) => (
-                                    <div key={item.id} className="group flex bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all items-start gap-4">
-                                        {/* Tanggal Box */}
-                                        <div className={`hidden sm:flex flex-col items-center justify-center w-20 h-20 rounded-xl border ${getColorClass(item.color)}`}>
-                                            <span className="text-xs font-bold uppercase">{new Date(item.start_time).toLocaleDateString('id-ID', { month: 'short' })}</span>
-                                            <span className="text-2xl font-black">{new Date(item.start_time).getDate()}</span>
-                                        </div>
+                        {/* === KANAN (5 Cols): UPCOMING LIST === */}
+                        <div className="lg:col-span-5">
+                            <div className="rounded-[2.5rem] p-8 border border-white/60 dark:border-white/5 bg-white/30 dark:bg-black/30 backdrop-blur-md h-full min-h-[600px] flex flex-col">
+                                <h3 className="font-bold text-lg text-slate-800 dark:text-white mb-6 uppercase tracking-widest opacity-70">
+                                    Berikutnya
+                                </h3>
 
-                                        {/* Konten */}
-                                        <div className="flex-1">
-                                            <div className="flex justify-between items-start">
-                                                <h4 className="font-bold text-slate-800 text-lg">{item.title}</h4>
-                                                <button onClick={() => deleteSchedule(item.id)} className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition">Hapus</button>
-                                            </div>
-                                            <p className="text-sm text-cyan-600 font-bold mt-1">
-                                                🕒 {formatDateTime(item.start_time)}
-                                            </p>
-                                            {item.location && (
-                                                <p className="text-sm text-slate-500 flex items-center gap-1 mt-1">
-                                                    📍 {item.location}
-                                                </p>
-                                            )}
-                                            {item.description && <p className="text-sm text-slate-600 mt-2 bg-slate-50 p-2 rounded-lg">{item.description}</p>}
-                                        </div>
-                                    </div>
-                                ))
-                            )}
+                                <div className="flex-1 overflow-y-auto space-y-4 custom-scrollbar pr-2">
+                                    {upcomingList.length === 0 ? (
+                                        <p className="text-slate-400 italic">Tidak ada agenda mendatang.</p>
+                                    ) : (
+                                        upcomingList.map((event, idx) => {
+                                            const isDifferentDay = idx === 0 || new Date(event.start).toDateString() !== new Date(upcomingList[idx - 1].start).toDateString();
+
+                                            return (
+                                                <div key={event.id}>
+                                                    {isDifferentDay && (
+                                                        <div className="sticky top-0 z-10 py-2 mb-2">
+                                                            <span className="bg-slate-800/80 dark:bg-white/80 text-white dark:text-black px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest backdrop-blur-md">
+                                                                {new Date(event.start).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short' })}
+                                                            </span>
+                                                        </div>
+                                                    )}
+
+                                                    <div className="group relative bg-white/60 dark:bg-black/60 p-5 rounded-2xl hover:bg-white/80 dark:hover:bg-black/80 transition-all duration-300 border border-transparent hover:border-indigo-200 dark:hover:border-indigo-900/50 shadow-sm">
+                                                        <div className="flex justify-between items-start">
+                                                            <div className="flex gap-4">
+                                                                <div className="flex flex-col items-center">
+                                                                    <div className={`w-3 h-3 rounded-full mb-1 bg-${event.color}-500 shadow-[0_0_10px_currentColor]`}></div>
+                                                                    <div className="w-0.5 h-full bg-slate-300/30 rounded-full"></div>
+                                                                </div>
+                                                                <div className="pb-2">
+                                                                    <p className="font-mono text-xs font-bold text-slate-400 mb-1">
+                                                                        {new Date(event.start).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                                                    </p>
+                                                                    <h4 className="font-bold text-slate-800 dark:text-white text-lg leading-tight mb-1">
+                                                                        {event.title}
+                                                                    </h4>
+                                                                    {event.location && (
+                                                                        <p className="text-xs text-slate-500">📍 {event.location}</p>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => deleteEvent(event.id)}
+                                                                className="text-slate-300 hover:text-red-500 transition opacity-0 group-hover:opacity-100"
+                                                            >
+                                                                ✕
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })
+                                    )}
+                                </div>
+                            </div>
                         </div>
 
                     </div>

@@ -7,7 +7,7 @@ import NotificationDropdown from '@/Components/NotificationDropdown'; // <--- IM
 
 export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem[] }) {
     return (
-        <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b border-sidebar-border/50 px-6 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 bg-white/50 backdrop-blur-sm sticky top-0 z-10">
+        <header className="flex dark:bg-neutral-800 h-16 shrink-0 items-center justify-between gap-2 border-b border-sidebar-border/50 px-6 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 bg-white/50 backdrop-blur-sm sticky top-0 z-10">
 
             {/* BAGIAN KIRI: Tombol Sidebar & Breadcrumbs */}
             <div className="flex items-center gap-2">

@@ -109,7 +109,7 @@ export default function ClientIndex({ auth, clients }: Props) {
         <AppLayout breadcrumbs={[{ title: 'Dashboard', href: '/dashboard' }, { title: 'Data Klien', href: '/clients' }]}>
             <Head title="Data Klien" />
 
-            <div className="min-h-screen bg-slate-50/50 p-6 lg:p-8 font-sans">
+            <div className="min-h-screen bg-slate-50 dark:bg-black p-6 lg:p-8 font-sans">
 
                 {/* --- HEADER SECTION --- */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
