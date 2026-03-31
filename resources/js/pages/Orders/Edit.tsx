@@ -1,6 +1,6 @@
 import { useState, FormEventHandler } from 'react';
 import AppLayout from '@/layouts/app-layout';
-import { Head, useForm, Link, router } from '@inertiajs/react';
+import { Head, useForm, router } from '@inertiajs/react';
 import { PageProps } from '@/types';
 import { route } from 'ziggy-js';
 
@@ -13,6 +13,9 @@ interface Props extends PageProps {
 
 export default function OrderEdit({ auth, order, clients, serviceTypes }: Props) {
     const [isPpat, setIsPpat] = useState(false);
+
+    // STATE BARU UNTUK MODAL DELETE
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
 
     // Hitung Keuangan Real-time
     const totalTagihan = Number(order.service_price) + Number(order.tax_deposit);
@@ -67,25 +70,25 @@ export default function OrderEdit({ auth, order, clients, serviceTypes }: Props)
         if(confirm('Hapus file ini?')) router.delete(route('orders.deleteFile', fileId));
     };
 
-    const deletePayment = (paymentId: number) => {
-        if(confirm('Batalkan pembayaran ini?')) router.delete(route('payments.destroy', paymentId));
+    const confirmDeleteOrder = () => {
+        setShowDeleteModal(false);
+        router.delete(route('orders.destroy', order.id));
     };
 
     // Helper Rupiah
     const rupiah = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
     const getFileUrl = (path: string) => `/storage/${path}`;
 
-    // --- STYLES DIPERBAIKI (LEBIH BESAR & LEGA) ---
-    // Perubahan: Menambahkan py-3 (tinggi) px-4 (lebar) dan rounded-xl
+    // --- STYLES ---
     const inputClasses = "w-full rounded-xl bg-gray-50 dark:bg-black border border-gray-300 dark:border-zinc-700 text-slate-900 dark:text-white text-sm focus:ring-indigo-500 focus:border-indigo-500 transition-all py-3 px-4 shadow-sm";
-    const labelClasses = "block text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase mb-2 ml-1"; // Sedikit margin bawah dan kiri
+    const labelClasses = "block text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase mb-2 ml-1";
     const cardClasses = "bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm p-6";
 
     return (
         <AppLayout breadcrumbs={[{ title: 'Order', href: '/orders' }, { title: `#${order.order_number}`, href: '#' }]}>
             <Head title={`Edit Order ${order.order_number}`} />
 
-            <div className="min-h-screen bg-gray-50 dark:bg-black font-sans transition-colors duration-300 p-4 lg:p-8">
+            <div className="min-h-screen bg-gray-50 dark:bg-black font-sans transition-colors duration-300 p-4 lg:p-8 relative">
                 <div className="w-full mx-auto">
 
                     {/* HEADER */}
@@ -106,9 +109,10 @@ export default function OrderEdit({ auth, order, clients, serviceTypes }: Props)
                             </p>
                         </div>
 
-                        {/* TOMBOL DELETE (Hanya Super Admin) */}
+                        {/* TOMBOL DELETE DENGAN CUSTOM MODAL */}
                         <button
-                            onClick={() => { if(confirm('HAPUS ORDER INI PERMANEN?')) router.delete(route('orders.destroy', order.id)); }}
+                            type="button"
+                            onClick={() => setShowDeleteModal(true)}
                             className="text-xs font-bold text-red-500 hover:text-red-400 border border-red-500/30 hover:bg-red-500/10 px-4 py-2 rounded-lg transition"
                         >
                             🗑️ Hapus Order
@@ -151,10 +155,7 @@ export default function OrderEdit({ auth, order, clients, serviceTypes }: Props)
 
                                     <div className="mb-6">
                                         <label className={labelClasses}>Jenis Layanan</label>
-                                        <select value={data.service_id} onChange={e => {
-                                            setData('service_id', e.target.value);
-                                            // Deteksi PPAT logic here if needed
-                                        }} className={inputClasses}>
+                                        <select value={data.service_id} onChange={e => setData('service_id', e.target.value)} className={inputClasses}>
                                             <option value="">-- Pilih Layanan --</option>
                                             {serviceTypes.map((type: any) => (
                                                 <optgroup key={type.id} label={type.name}>
@@ -177,7 +178,7 @@ export default function OrderEdit({ auth, order, clients, serviceTypes }: Props)
                                         </div>
                                     </div>
 
-                                    {/* DATA PPAT (Hanya jika layanan PPAT) */}
+                                    {/* DATA PPAT */}
                                     <div className="mt-8 pt-6 border-t border-gray-100 dark:border-zinc-800">
                                         <button type="button" onClick={() => setIsPpat(!isPpat)} className="text-xs font-bold text-indigo-500 hover:text-indigo-400 flex items-center gap-1 mb-4">
                                             {isPpat ? '🔽 Sembunyikan' : '▶️ Tampilkan'} Detail Tanah/Bangunan (PPAT)
@@ -280,7 +281,7 @@ export default function OrderEdit({ auth, order, clients, serviceTypes }: Props)
                                                     <a href={getFileUrl(file.file_path)} target="_blank" className="p-1.5 text-slate-400 hover:text-indigo-500 bg-white dark:bg-zinc-900 rounded-md border border-gray-200 dark:border-zinc-700" title="Download / Lihat">
                                                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                                                     </a>
-                                                    <button onClick={() => deleteFile(file.id)} className="p-1.5 text-slate-400 hover:text-red-500 bg-white dark:bg-zinc-900 rounded-md border border-gray-200 dark:border-zinc-700" title="Hapus">
+                                                    <button type="button" onClick={() => deleteFile(file.id)} className="p-1.5 text-slate-400 hover:text-red-500 bg-white dark:bg-zinc-900 rounded-md border border-gray-200 dark:border-zinc-700" title="Hapus">
                                                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                                     </button>
                                                 </div>
@@ -295,7 +296,7 @@ export default function OrderEdit({ auth, order, clients, serviceTypes }: Props)
                         {/* === KOLOM KANAN: ACTIONS & FINANCE (5 Kolom) === */}
                         <div className="lg:col-span-5 space-y-6">
 
-                            {/* CARD: SMART ACTIONS (Tombol Sakti) */}
+                            {/* CARD: SMART ACTIONS */}
                             <div className={`${cardClasses} border-l-4 border-l-indigo-500 relative overflow-hidden`}>
                                 <div className="absolute top-0 right-0 p-4 opacity-5">
                                     <svg className="w-32 h-32" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" /></svg>
@@ -303,13 +304,11 @@ export default function OrderEdit({ auth, order, clients, serviceTypes }: Props)
                                 <h3 className="text-sm font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-widest mb-4">Aksi Cepat</h3>
                                 <div className="grid grid-cols-2 gap-3 relative z-10">
 
-                                    {/* Tombol Invoice */}
                                     <a href={route('orders.invoice', order.id)} target="_blank" className="flex flex-col items-center justify-center p-4 bg-gray-50 dark:bg-black rounded-xl border border-gray-200 dark:border-zinc-800 hover:border-emerald-500 dark:hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition group cursor-pointer">
                                         <span className="text-2xl mb-2 group-hover:scale-110 transition">🖨️</span>
                                         <span className="text-xs font-bold text-slate-700 dark:text-zinc-300 group-hover:text-emerald-600 dark:group-hover:text-emerald-400">Cetak Invoice</span>
                                     </a>
 
-                                    {/* Tombol Generate Dokumen (Placeholder Href) */}
                                     <a href="#" className="flex flex-col items-center justify-center p-4 bg-gray-50 dark:bg-black rounded-xl border border-gray-200 dark:border-zinc-800 hover:border-blue-500 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition group cursor-pointer" onClick={(e) => { e.preventDefault(); alert("Fitur Generate Dokumen akan aktif setelah template diupload."); }}>
                                         <span className="text-2xl mb-2 group-hover:scale-110 transition">📜</span>
                                         <span className="text-xs font-bold text-slate-700 dark:text-zinc-300 group-hover:text-blue-600 dark:group-hover:text-blue-400">Generate Akta</span>
@@ -371,10 +370,43 @@ export default function OrderEdit({ auth, order, clients, serviceTypes }: Props)
                             </div>
 
                         </div>
-
                     </div>
                 </div>
             </div>
+
+            {/* --- CUSTOM MODAL ALERT DELETE --- */}
+            {showDeleteModal && (
+                <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity">
+                    <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all border border-red-500/20 scale-100 animate-fade-in-up">
+                        <div className="flex items-center justify-center w-16 h-16 mx-auto bg-red-100 dark:bg-red-500/20 rounded-full mb-4">
+                            <span className="text-3xl">⚠️</span>
+                        </div>
+                        <h3 className="text-xl font-black text-center text-slate-900 dark:text-white mb-2">
+                            Hapus Order Permanen?
+                        </h3>
+                        <p className="text-slate-500 dark:text-zinc-400 text-sm text-center mb-6">
+                            Aksi ini tidak dapat dibatalkan. Semua data terkait order <span className="font-bold text-slate-800 dark:text-zinc-200">#{order.order_number}</span> termasuk berkas dan riwayat akan dihapus selamanya.
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setShowDeleteModal(false)}
+                                className="flex-1 px-4 py-3 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 font-bold rounded-xl transition-colors"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="button"
+                                onClick={confirmDeleteOrder}
+                                className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl shadow-lg shadow-red-500/30 transition-colors"
+                            >
+                                Ya, Hapus!
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </AppLayout>
     );
 }

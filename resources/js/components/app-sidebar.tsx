@@ -22,18 +22,16 @@ import {
     UserCog,
     Settings,
     Activity,
-    Building2
+    Building2,
+    BookOpen
 } from 'lucide-react';
 import { PageProps } from '@/types';
-import { route } from 'ziggy-js';
+import { route } from 'ziggy-js'; // SUDAH DIPERBAIKI DISINI
 
 export function AppSidebar() {
-    // 1. Ambil Data User yang Login
     const { auth } = usePage<PageProps>().props;
-    // Deteksi Role: Jika tidak ada role, anggap string kosong
     const userRole = auth.user.roles?.[0]?.name || '';
 
-    // 2. Definisi Menu
     const menuGroups = [
         {
             label: 'Platform',
@@ -42,7 +40,7 @@ export function AppSidebar() {
                     title: 'Dashboard',
                     url: route('dashboard'),
                     icon: LayoutGrid,
-                    show: true // Semua role boleh lihat
+                    show: true
                 },
             ]
         },
@@ -67,6 +65,12 @@ export function AppSidebar() {
                     icon: Calendar,
                     show: true
                 },
+                {
+                    title: 'Buku Register',
+                    url: route('registers.index'),
+                    icon: BookOpen,
+                    show: ['super_admin', 'staff', 'notaris', 'bos'].includes(userRole)
+                },
             ]
         },
         {
@@ -76,7 +80,6 @@ export function AppSidebar() {
                     title: 'Laporan & Invoice',
                     url: route('reports.index'),
                     icon: BarChart3,
-                    // Staff biasa DILARANG lihat uang
                     show: ['super_admin', 'notaris', 'bos'].includes(userRole)
                 },
                 {
@@ -94,14 +97,12 @@ export function AppSidebar() {
                     title: 'Manajemen User',
                     url: route('users.index'),
                     icon: UserCog,
-                    // Hanya Super Admin yang boleh kelola pegawai
                     show: userRole === 'super_admin'
                 },
                 {
                     title: 'Pengaturan Kantor',
                     url: route('settings.edit'),
                     icon: Settings,
-                    // Admin & Bos boleh ganti nama kantor/alamat
                     show: ['super_admin', 'bos'].includes(userRole)
                 },
                 {
@@ -114,7 +115,6 @@ export function AppSidebar() {
         }
     ];
 
-    // Helper: Cek apakah route sedang aktif
     const isRouteActive = (routeName: string) => {
         try {
             return window.location.href.startsWith(routeName);
@@ -125,7 +125,6 @@ export function AppSidebar() {
 
     return (
         <Sidebar collapsible="icon" variant="inset">
-            {/* --- HEADER --- */}
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
@@ -144,12 +143,9 @@ export function AppSidebar() {
                 </SidebarMenu>
             </SidebarHeader>
 
-            {/* --- CONTENT MENU --- */}
             <SidebarContent>
                 {menuGroups.map((group, index) => {
-                    // Cek apakah di group ini ada minimal 1 menu yang boleh dilihat user
                     const visibleItems = group.items.filter(item => item.show);
-
                     if (visibleItems.length === 0) return null;
 
                     return (
@@ -174,7 +170,6 @@ export function AppSidebar() {
                 })}
             </SidebarContent>
 
-            {/* --- FOOTER (User Profile) --- */}
             <SidebarFooter>
                 <NavUser />
             </SidebarFooter>

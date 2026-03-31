@@ -3,6 +3,11 @@ import AppLayout from '@/layouts/app-layout';
 import { Head, useForm, router } from '@inertiajs/react';
 import { PageProps } from '@/types';
 import { route } from 'ziggy-js';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
+
+// Inisialisasi SweetAlert untuk React
+const MySwal = withReactContent(Swal);
 
 interface Props extends PageProps {
     company: {
@@ -33,11 +38,29 @@ export default function OfficeEdit({ company }: Props) {
         logo: null as File | null,
     });
 
+    // Alert Custom Style untuk Dark Mode
+    const toastConfig = {
+        background: '#0f172a', // slate-950
+        color: '#f1f5f9', // slate-100
+        confirmButtonColor: '#0891b2', // cyan-600
+        cancelButtonColor: '#1e293b', // slate-800
+    };
+
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
         post(route('settings.update'), {
             forceFormData: true,
             preserveScroll: true,
+            onSuccess: () => {
+                MySwal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: 'Identitas kantor telah diperbarui.',
+                    timer: 2000,
+                    showConfirmButton: false,
+                    ...toastConfig
+                });
+            }
         });
     };
 
@@ -50,19 +73,38 @@ export default function OfficeEdit({ company }: Props) {
     };
 
     const handleDeleteLogo = () => {
-        if (confirm('Yakin ingin menghapus logo ini?')) {
-            router.delete(route('settings.logo.delete'), {
-                preserveScroll: true,
-                onSuccess: () => {
-                    setPreview(null);
-                    setData('logo', null);
-                }
-            });
-        }
+        MySwal.fire({
+            title: 'Hapus Logo?',
+            text: "Logo yang dihapus tidak dapat dikembalikan!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Hapus!',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            ...toastConfig
+        }).then((result) => {
+            if (result.isConfirmed) {
+                router.delete(route('settings.logo.delete'), {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        setPreview(null);
+                        setData('logo', null);
+                        MySwal.fire({
+                            title: 'Terhapus!',
+                            text: 'Logo berhasil dihapus.',
+                            icon: 'success',
+                            timer: 1500,
+                            showConfirmButton: false,
+                            ...toastConfig
+                        });
+                    }
+                });
+            }
+        });
     };
 
     // STYLING
-    const inputClasses = "mt-1 block w-full rounded-xl bg-slate-900/50 border border-slate-700 text-slate-100 placeholder-slate-500 shadow-sm focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-sm py-3 px-4 transition-all";
+    const inputClasses = "mt-1 block w-full rounded-xl bg-slate-900/50 border border-slate-700 text-slate-100 placeholder-slate-500 shadow-sm focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-sm py-3 px-4 transition-all outline-none";
     const labelClasses = "block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1";
     const sectionTitle = "text-lg font-bold text-white mb-4 flex items-center gap-2 border-b border-slate-800 pb-2";
 
@@ -82,29 +124,27 @@ export default function OfficeEdit({ company }: Props) {
 
                     <form onSubmit={submit} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-                        {/* === PANEL KIRI: LOGO (3 Kolom) === */}
+                        {/* === PANEL KIRI: LOGO === */}
                         <div className="lg:col-span-4 space-y-6">
-                            <div className="bg-slate-950 rounded-[1.5rem] p-8 border border-slate-800/50 shadow-2xl relative overflow-hidden text-center">
-                                {/* Dekorasi */}
-                                <div className="absolute top-0 right-0 w-40 h-40 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none"></div>
+                            <div className="bg-slate-950 rounded-[2rem] p-8 border border-slate-800/50 shadow-2xl relative overflow-hidden text-center transition-all hover:border-slate-700">
+                                <div className="absolute top-0 right-0 w-40 h-40 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-                                <h3 className="text-white font-bold text-lg mb-6 relative z-10">Logo Kantor</h3>
+                                <h3 className="text-white font-bold text-lg mb-6 relative z-10 tracking-tight">Logo Kantor</h3>
 
                                 <div className="relative group mx-auto w-48 h-48 mb-6">
-                                    <div className={`w-full h-full rounded-full border-4 border-slate-800 overflow-hidden flex items-center justify-center bg-slate-900 shadow-inner ${!preview ? 'border-dashed' : ''}`}>
+                                    <div className={`w-full h-full rounded-full border-4 border-slate-800 overflow-hidden flex items-center justify-center bg-slate-900 shadow-2xl transition-all duration-300 group-hover:border-cyan-500/50 ${!preview ? 'border-dashed' : ''}`}>
                                         {preview ? (
-                                            <img src={preview} alt="Logo" className="w-full h-full object-cover" />
+                                            <img src={preview} alt="Logo" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                                         ) : (
                                             <div className="text-center p-4">
-                                                <span className="text-4xl">🏛️</span>
-                                                <p className="text-slate-500 text-[10px] mt-2">Belum ada logo</p>
+                                                <span className="text-5xl mb-2 block animate-pulse">🏛️</span>
+                                                <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest">No Logo</p>
                                             </div>
                                         )}
 
-                                        {/* Hover Overlay */}
-                                        <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-pointer backdrop-blur-[2px]">
-                                            <svg className="w-8 h-8 text-white mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                                            <span className="text-white text-xs font-bold uppercase tracking-wide">Ganti Logo</span>
+                                        <div className="absolute inset-0 bg-slate-900/80 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-pointer backdrop-blur-[4px]">
+                                            <svg className="w-10 h-10 text-cyan-400 mb-2 transform -translate-y-2 group-hover:translate-y-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                                            <span className="text-white text-[10px] font-black uppercase tracking-widest">Update Logo</span>
                                         </div>
 
                                         <input
@@ -116,20 +156,21 @@ export default function OfficeEdit({ company }: Props) {
                                     </div>
                                 </div>
 
-                                <div className="space-y-3 relative z-10">
-                                    <p className="text-slate-500 text-xs">
-                                        Format: PNG, JPG (Max 2MB).<br/>Disarankan bentuk persegi (1:1).
+                                <div className="space-y-4 relative z-10">
+                                    <p className="text-slate-500 text-[10px] font-medium leading-relaxed">
+                                        REKOMENDASI:<br/>
+                                        Format PNG/JPG transparan.<br/>Aspek rasio 1:1 (Persegi).
                                     </p>
-                                    {errors.logo && <p className="text-red-400 text-xs font-bold bg-red-950/30 p-2 rounded">{errors.logo}</p>}
 
-                                    {/* Tombol Hapus Logo */}
+                                    {errors.logo && <div className="text-red-400 text-[10px] font-bold bg-red-950/40 p-3 rounded-xl border border-red-900/50 animate-shake">{errors.logo}</div>}
+
                                     {company.logo_path && (
                                         <button
                                             type="button"
                                             onClick={handleDeleteLogo}
-                                            className="w-full py-2.5 text-xs font-bold text-red-400 hover:text-red-300 border border-red-900/30 hover:bg-red-900/20 rounded-xl transition flex items-center justify-center gap-2"
+                                            className="w-full py-3 text-[11px] font-black uppercase tracking-widest text-red-400 hover:text-white border border-red-900/30 hover:bg-red-600 rounded-xl transition-all flex items-center justify-center gap-2 group"
                                         >
-                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                            <svg className="w-4 h-4 group-hover:animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                             Hapus Logo
                                         </button>
                                     )}
@@ -137,80 +178,88 @@ export default function OfficeEdit({ company }: Props) {
                             </div>
                         </div>
 
-                        {/* === PANEL KANAN: FORM DATA (9 Kolom) === */}
+                        {/* === PANEL KANAN: FORM DATA === */}
                         <div className="lg:col-span-8">
-                            <div className="bg-slate-950 rounded-[1.5rem] p-8 lg:p-10 border border-slate-800/50 shadow-2xl relative overflow-hidden">
-                                {/* Dekorasi */}
+                            <div className="bg-slate-950 rounded-[2rem] p-8 lg:p-12 border border-slate-800/50 shadow-2xl relative overflow-hidden transition-all hover:border-slate-700">
                                 <div className="absolute top-0 left-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none"></div>
 
-                                <div className="relative z-10 space-y-8">
+                                <div className="relative z-10 space-y-10">
 
                                     {/* SECTION 1 */}
-                                    <div>
+                                    <div className="group">
                                         <h3 className={sectionTitle}>
-                                            <span className="w-2 h-6 bg-cyan-500 rounded-full"></span>
+                                            <span className="w-1.5 h-6 bg-cyan-500 rounded-full group-hover:scale-y-125 transition-transform"></span>
                                             Informasi Dasar
                                         </h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                             <div>
                                                 <label className={labelClasses}>Nama Kantor</label>
-                                                <input type="text" value={data.name} onChange={e => setData('name', e.target.value)} className={inputClasses} placeholder="KANTOR NOTARIS..." />
+                                                <input type="text" value={data.name} onChange={e => setData('name', e.target.value)} className={inputClasses} placeholder="Contoh: KANTOR NOTARIS & PPAT..." />
+                                                {errors.name && <p className="text-red-500 text-[10px] mt-1">{errors.name}</p>}
                                             </div>
                                             <div>
                                                 <label className={labelClasses}>Nama Pejabat (SK)</label>
-                                                <input type="text" value={data.notary_name} onChange={e => setData('notary_name', e.target.value)} className={inputClasses} placeholder="Nama Lengkap & Gelar" />
+                                                <input type="text" value={data.notary_name} onChange={e => setData('notary_name', e.target.value)} className={inputClasses} placeholder="Gelar lengkap sesuai SK" />
+                                                {errors.notary_name && <p className="text-red-500 text-[10px] mt-1">{errors.notary_name}</p>}
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* SECTION 2 */}
-                                    <div>
+                                    <div className="group">
                                         <h3 className={sectionTitle}>
-                                            <span className="w-2 h-6 bg-indigo-500 rounded-full"></span>
+                                            <span className="w-1.5 h-6 bg-indigo-500 rounded-full group-hover:scale-y-125 transition-transform"></span>
                                             Kontak & Alamat
                                         </h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
                                             <div>
                                                 <label className={labelClasses}>No. Telepon / WhatsApp</label>
-                                                <input type="text" value={data.phone} onChange={e => setData('phone', e.target.value)} className={inputClasses} />
+                                                <input type="text" value={data.phone} onChange={e => setData('phone', e.target.value)} className={inputClasses} placeholder="0812..." />
                                             </div>
                                             <div>
                                                 <label className={labelClasses}>Email Resmi</label>
-                                                <input type="email" value={data.email} onChange={e => setData('email', e.target.value)} className={inputClasses} />
+                                                <input type="email" value={data.email} onChange={e => setData('email', e.target.value)} className={inputClasses} placeholder="admin@kantor.com" />
                                             </div>
                                         </div>
                                         <div>
-                                            <label className={labelClasses}>Alamat Lengkap</label>
-                                            <textarea rows={2} value={data.address} onChange={e => setData('address', e.target.value)} className={inputClasses} placeholder="Jalan, Kelurahan, Kecamatan..."></textarea>
+                                            <label className={labelClasses}>Alamat Lengkap Kantor</label>
+                                            <textarea rows={3} value={data.address} onChange={e => setData('address', e.target.value)} className={`${inputClasses} resize-none`} placeholder="Tuliskan alamat lengkap untuk keperluan kop surat..."></textarea>
                                         </div>
                                     </div>
 
                                     {/* SECTION 3 */}
-                                    <div>
+                                    <div className="group">
                                         <h3 className={sectionTitle}>
-                                            <span className="w-2 h-6 bg-emerald-500 rounded-full"></span>
+                                            <span className="w-1.5 h-6 bg-emerald-500 rounded-full group-hover:scale-y-125 transition-transform"></span>
                                             Rekening Pembayaran
                                         </h3>
-                                        <div>
+                                        <div className="relative group/input">
                                             <label className={labelClasses}>Bank & No. Rekening</label>
+                                            <div className="absolute left-4 top-[38px] text-emerald-500 opacity-50">💳</div>
                                             <input
                                                 type="text"
                                                 value={data.bank_account}
                                                 onChange={e => setData('bank_account', e.target.value)}
-                                                className={`${inputClasses} border-emerald-900/50 text-emerald-100 placeholder-emerald-800 focus:border-emerald-500 focus:ring-emerald-500 font-mono`}
-                                                placeholder="BANK 0000-0000 A.N NAMA"
+                                                className={`${inputClasses} pl-12 border-emerald-900/30 text-emerald-100 placeholder-emerald-900/50 focus:border-emerald-500 focus:ring-emerald-500 font-mono tracking-wider`}
+                                                placeholder="BCA 1234567890 A.N MAS DAENG"
                                             />
                                         </div>
                                     </div>
 
                                     {/* ACTION BUTTON */}
-                                    <div className="pt-6 border-t border-slate-800 flex justify-end">
+                                    <div className="pt-8 border-t border-slate-800 flex justify-end items-center gap-4">
+                                        <span className="text-[10px] text-slate-500 italic hidden md:block">Perubahan akan langsung diterapkan pada sistem invoicing.</span>
                                         <button
                                             type="submit"
                                             disabled={processing}
-                                            className="px-10 py-4 bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-cyan-900/20 transform hover:-translate-y-0.5 transition-all"
+                                            className="px-12 py-4 bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl shadow-2xl shadow-cyan-900/40 transform hover:-translate-y-1 active:scale-95 transition-all disabled:opacity-50"
                                         >
-                                            {processing ? 'Menyimpan...' : '💾 Simpan Perubahan'}
+                                            {processing ? (
+                                                <div className="flex items-center gap-2">
+                                                    <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                                    Menyimpan...
+                                                </div>
+                                            ) : 'Update Identitas'}
                                         </button>
                                     </div>
 

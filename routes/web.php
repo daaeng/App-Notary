@@ -11,6 +11,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\GlobalSearchController;
 use App\Http\Controllers\NotificationController; // Pastikan import
 use App\Http\Controllers\BackupController;       // Pastikan import
+use App\Http\Controllers\RegisterController;
 use App\Models\Order;
 use App\Models\Expense;
 use App\Models\Schedule;
@@ -132,6 +133,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('orders/{order}/payments', [App\Http\Controllers\PaymentController::class, 'store'])->name('payments.store');
     Route::delete('payments/{payment}', [App\Http\Controllers\PaymentController::class, 'destroy'])->name('payments.destroy');
+
+    // 7. BUKU REGISTER / KLAMPENING (Admin, Staff, Notaris, & BOS)
+    // Mas Daeng bisa akses ini karena role Mas adalah IT/Super Admin
+    Route::group(['middleware' => ['role:super_admin|staff|notaris|bos']], function () {
+        Route::get('registers', [RegisterController::class, 'index'])->name('registers.index');
+        Route::post('registers', [RegisterController::class, 'store'])->name('registers.store');
+        Route::delete('registers/{register}', [RegisterController::class, 'destroy'])->name('registers.destroy');
+
+        // Opsional: Route untuk Export PDF/Print jika nanti dibutuhkan
+        Route::get('registers/export', [RegisterController::class, 'export'])->name('registers.export');
+    });
 
 });
 
