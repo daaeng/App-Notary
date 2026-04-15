@@ -12,6 +12,11 @@ class Order extends Model
 
     protected $guarded = [];
 
+    // --- TAMBAHAN BARU: AGAR LARAVEL BISA MEMBACA INPUTAN SHARLOCK/NO HP ---
+    protected $casts = [
+        'additional_info' => 'array',
+    ];
+
     // Konfigurasi Logging CCTV
     public function getActivitylogOptions(): LogOptions
     {
@@ -21,35 +26,10 @@ class Order extends Model
             ->setDescriptionForEvent(fn(string $eventName) => "Order ini telah di-{$eventName}");
     }
 
-    // Relasi ke Klien
-    public function client()
-    {
-        return $this->belongsTo(Client::class);
-    }
-
-    // Relasi ke Layanan
-    public function service()
-    {
-        return $this->belongsTo(Service::class);
-    }
-
-    // Relasi ke Detail PPAT
-    public function ppat_detail()
-    {
-        return $this->hasOne(OrderPpatDetail::class);
-    }
-
-    // Relasi ke File Arsip
-    public function files()
-    {
-        return $this->hasMany(OrderFile::class);
-    }
-
-    // --- INI YANG TADI HILANG ---
-    // Relasi ke Pembayaran (Payments)
-    public function payments()
-    {
-        // Satu Order punya Banyak Pembayaran, urutkan dari yang terbaru
-        return $this->hasMany(Payment::class)->latest();
-    }
+    // Relasi
+    public function client() { return $this->belongsTo(Client::class); }
+    public function service() { return $this->belongsTo(Service::class); }
+    public function ppat_detail() { return $this->hasOne(OrderPpatDetail::class); }
+    public function files() { return $this->hasMany(OrderFile::class); }
+    public function payments() { return $this->hasMany(Payment::class)->latest(); }
 }

@@ -15,58 +15,63 @@ return new class extends Migration
             $table->foreignId('service_id')->constrained()->onDelete('restrict'); // Apa layanannya
 
             // Identitas Akta
-            $table->string('order_number')->unique(); // No Order Sistem (Generate Auto)
-            $table->string('akta_number')->nullable(); // No Akta Resmi (01/2026)
-            $table->date('akta_date')->nullable(); // Tgl Akta
-            $table->string('description')->nullable(); // Judul/Keterangan (Misal: Jual Beli Tanah di Kemang)
+            $table->string('order_number')->unique();
+            $table->string('akta_number')->nullable();
+            $table->date('akta_date')->nullable();
+            $table->string('description')->nullable();
 
             // Status Pengerjaan (Workflow)
-            // Enum: 'new', 'draft', 'process', 'minuta', 'binding', 'done', 'cancel'
             $table->string('status')->default('new');
 
-            // Keuangan (Pemisahan Honor vs Titipan Negara)
-            $table->decimal('service_price', 15, 2)->default(0); // Jasa Notaris
-            $table->decimal('tax_deposit', 15, 2)->default(0); // Titipan Pajak (PPH/BPHTB)
+            // --- RINCIAN KEUANGAN BARU ---
+            $table->decimal('service_price', 15, 2)->default(0);
+            $table->decimal('plotting_fee', 15, 2)->default(0);
+            $table->decimal('pnbp_fee', 15, 2)->default(0);
+            $table->decimal('validation_fee', 15, 2)->default(0);
+            $table->decimal('bphtb_fee', 15, 2)->default(0);
+            $table->decimal('pph_fee', 15, 2)->default(0);
+            $table->decimal('measurement_fee', 15, 2)->default(0); // Penataan Batas
+            $table->decimal('location_check_fee', 15, 2)->default(0); // Pengecekan Lokasi
+            $table->decimal('area_measurement_fee', 15, 2)->default(0); // Pengukuran Luas
+            $table->decimal('tax_deposit', 15, 2)->default(0); // Balik Nama SPPT / Titipan
             $table->decimal('total_amount', 15, 2)->default(0); // Total Tagihan
 
+            // --- PENYIMPANAN TEKS DINAMIS (Sharlock, No HP, Materai, dll) ---
+            $table->json('additional_info')->nullable();
+
             // Status Pembayaran
-            // Enum: 'unpaid', 'partial', 'paid'
             $table->string('payment_status')->default('unpaid');
 
             $table->timestamps();
         });
 
-        // 2. Detail Khusus PPAT (Sesuai Referensi Gambar Mas Daeng)
+        // 2. Detail Khusus PPAT
         Schema::create('order_ppat_details', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_id')->constrained()->onDelete('cascade');
 
-            // Pihak (Kompleksitas PPAT: Ada Penjual & Pembeli selain Klien Utama)
-            $table->text('seller_name')->nullable(); // Pihak Mengalihkan
+            $table->text('seller_name')->nullable(); // Pihak Mengalihkan / A.n Sertifikat
             $table->text('buyer_name')->nullable(); // Pihak Menerima
+            $table->string('certificate_number')->nullable();
+            $table->text('object_address')->nullable();
+            $table->double('land_area')->default(0);
+            $table->double('building_area')->default(0);
 
-            // Objek Tanah/Bangunan
-            $table->string('certificate_number')->nullable(); // No SHM/HGB
-            $table->text('object_address')->nullable(); // Letak Tanah
-            $table->double('land_area')->default(0); // Luas Tanah (m2)
-            $table->double('building_area')->default(0); // Luas Bangunan (m2)
-
-            // Nilai Transaksi & Pajak
-            $table->decimal('njop', 15, 2)->default(0); // NJOP
-            $table->decimal('transaction_value', 15, 2)->default(0); // Harga Transaksi
-            $table->decimal('ssp_amount', 15, 2)->default(0); // PPH Final
-            $table->decimal('ssb_amount', 15, 2)->default(0); // BPHTB
+            $table->decimal('njop', 15, 2)->default(0);
+            $table->decimal('transaction_value', 15, 2)->default(0);
+            $table->decimal('ssp_amount', 15, 2)->default(0);
+            $table->decimal('ssb_amount', 15, 2)->default(0);
 
             $table->timestamps();
         });
 
-        // 3. Tracking History (Log Perubahan Status)
+        // 3. Tracking History
         Schema::create('order_histories', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_id')->constrained()->onDelete('cascade');
-            $table->string('status'); // Status saat itu
-            $table->text('note')->nullable(); // Catatan (misal: "Berkas kurang KTP")
-            $table->foreignId('user_id')->nullable(); // Siapa staff yang update
+            $table->string('status');
+            $table->text('note')->nullable();
+            $table->foreignId('user_id')->nullable();
             $table->timestamps();
         });
     }

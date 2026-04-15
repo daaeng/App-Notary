@@ -151,7 +151,7 @@ export default function ClientIndex({ auth, clients }: Props) {
                 {/* --- HEADER SECTION --- */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                     <div>
-                        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Daftar Klien</h1>
+                        <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Daftar Klien</h1>
                         <p className="text-slate-500 text-sm mt-1 font-medium">Kelola database klien Anda dengan mudah dan cepat.</p>
                     </div>
 
@@ -184,24 +184,24 @@ export default function ClientIndex({ auth, clients }: Props) {
                 </div>
 
                 {/* --- TABLE CARD --- */}
-                <div className="bg-white rounded-[2rem] shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+                <div className="bg-white dark:bg-neutral-800 rounded-[2rem] shadow-2xl shadow-slate-200/50 border  overflow-hidden">
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-slate-100">
+                        <table className="min-w-full divide-y  dark:text-black">
                             <thead>
                                 <tr className="bg-slate-50/50">
-                                    <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Profil Klien</th>
-                                    <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Identitas Resmi</th>
-                                    <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Kontak</th>
-                                    <th className="px-8 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Aksi</th>
+                                    <th className="px-8 py-5 text-left text-[10px] font-black dark:text-black text-slate-400 uppercase tracking-[0.2em]">Profil Klien</th>
+                                    <th className="px-8 py-5 text-left text-[10px] font-black dark:text-black text-slate-400 uppercase tracking-[0.2em]">Identitas Resmi</th>
+                                    <th className="px-8 py-5 text-left text-[10px] font-black dark:text-black text-slate-400 uppercase tracking-[0.2em]">Kontak</th>
+                                    <th className="px-8 py-5 text-right text-[10px] font-black dark:text-black text-slate-400 uppercase tracking-[0.2em]">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-slate-50">
+                            <tbody className="bg-white dark:bg-neutral-800 divide-y ">
                                 {filteredClients.length === 0 ? (
                                     <tr>
                                         <td colSpan={4} className="px-8 py-20 text-center">
                                             <div className="flex flex-col items-center justify-center text-slate-400 animate-pulse">
                                                 <span className="text-6xl mb-4">📂</span>
-                                                <p className="text-lg font-bold text-slate-900">Data Tidak Ditemukan</p>
+                                                <p className="text-lg font-bold text-slate-900 dark:text-white">Data Tidak Ditemukan</p>
                                                 <p className="text-sm font-medium">Pastikan kata kunci pencarian sudah benar.</p>
                                             </div>
                                         </td>

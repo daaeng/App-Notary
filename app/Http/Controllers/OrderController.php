@@ -7,97 +7,99 @@ use App\Models\Company;
 use App\Models\Order;
 use App\Models\Service;
 use App\Models\ServiceType;
-use App\Models\OrderFile; // Import Model File
-use Illuminate\Support\Facades\Storage; // Import Storage untuk hapus file fisik
+use App\Models\OrderFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class OrderController extends Controller
 {
-    // Menampilkan Daftar Order
     public function index()
     {
-        $orders = Order::with(['client', 'service'])
-            ->latest()
-            ->paginate(10);
-
-        return Inertia::render('Orders/Index', [
-            'orders' => $orders
-        ]);
+        $orders = Order::with(['client', 'service'])->latest()->paginate(10);
+        return Inertia::render('Orders/Index', ['orders' => $orders]);
     }
 
-    // Menampilkan Form Tambah Order
     public function create()
     {
         return Inertia::render('Orders/Create', [
             'clients' => Client::orderBy('name')->get(),
-            // Kita kirim data services dikelompokkan berdasarkan Type (Notaris/PPAT)
             'serviceTypes' => ServiceType::with('services')->get()
         ]);
     }
 
-    // Menyimpan Data Order (Logic Utama)
     public function store(Request $request)
     {
-        // 1. Validasi Dasar
-        $validated = $request->validate([
+        $request->validate([
             'client_id' => 'required|exists:clients,id',
             'service_id' => 'required|exists:services,id',
-            'description' => 'nullable|string',
-            'akta_date' => 'nullable|date',
-            'service_price' => 'numeric|min:0',
-            'tax_deposit' => 'numeric|min:0',
-
-            // Validasi Kondisional untuk PPAT akan kita handle manual di bawah
             'seller_name' => 'nullable|string',
-            'buyer_name' => 'nullable|string',
             'land_area' => 'nullable|numeric',
+            'transaction_value' => 'nullable|numeric', // WAJIB ADA AGAR TERSIMPAN
+            'njop' => 'nullable|numeric',
         ]);
 
-        DB::beginTransaction(); // Pakai Transaksi agar data aman
+        DB::beginTransaction();
 
         try {
-            // 2. Generate No Order Otomatis (Format: ORD-YYYYMM-XXXX)
-            $count = Order::whereYear('created_at', date('Y'))
-                        ->whereMonth('created_at', date('m'))
-                        ->count();
+            $count = Order::whereYear('created_at', date('Y'))->whereMonth('created_at', date('m'))->count();
             $orderNumber = 'ORD-' . date('Ym') . '-' . str_pad($count + 1, 4, '0', STR_PAD_LEFT);
 
-            // 3. Simpan ke Tabel Orders
+            $totalAmount = ($request->service_price ?? 0) + ($request->plotting_fee ?? 0) +
+                           ($request->pnbp_fee ?? 0) + ($request->validation_fee ?? 0) +
+                           ($request->bphtb_fee ?? 0) + ($request->pph_fee ?? 0) +
+                           ($request->measurement_fee ?? 0) + ($request->tax_deposit ?? 0) +
+                           ($request->location_check_fee ?? 0) + ($request->area_measurement_fee ?? 0);
+
             $order = Order::create([
                 'client_id' => $request->client_id,
                 'service_id' => $request->service_id,
                 'order_number' => $orderNumber,
                 'description' => $request->description,
                 'akta_date' => $request->akta_date,
+
                 'service_price' => $request->service_price ?? 0,
+                'plotting_fee' => $request->plotting_fee ?? 0,
+                'pnbp_fee' => $request->pnbp_fee ?? 0,
+                'validation_fee' => $request->validation_fee ?? 0,
+                'bphtb_fee' => $request->bphtb_fee ?? 0,
+                'pph_fee' => $request->pph_fee ?? 0,
+                'measurement_fee' => $request->measurement_fee ?? 0,
+                'location_check_fee' => $request->location_check_fee ?? 0,
+                'area_measurement_fee' => $request->area_measurement_fee ?? 0,
                 'tax_deposit' => $request->tax_deposit ?? 0,
-                'total_amount' => ($request->service_price ?? 0) + ($request->tax_deposit ?? 0),
-                'status' => 'new', // Default status
+
+                'total_amount' => $totalAmount,
+                'additional_info' => $request->additional_info,
+                'status' => 'new',
             ]);
 
-            // 4. Cek apakah ini layanan PPAT?
             $service = Service::with('type')->find($request->service_id);
-
-            // Jika Tipenya PPAT, simpan juga detailnya
             if ($service && $service->type->slug === 'ppat') {
                 $order->ppat_detail()->create([
                     'seller_name' => $request->seller_name,
-                    'buyer_name' => $request->buyer_name,
-                    'certificate_number' => $request->certificate_number,
-                    'object_address' => $request->object_address,
                     'land_area' => $request->land_area ?? 0,
-                    'building_area' => $request->building_area ?? 0,
+                    'transaction_value' => $request->transaction_value ?? 0, // SIMPAN HARGA TRANSAKSI
                     'njop' => $request->njop ?? 0,
-                    'transaction_value' => $request->transaction_value ?? 0,
-                    'ssp_amount' => $request->ssp_amount ?? 0,
-                    'ssb_amount' => $request->ssb_amount ?? 0,
                 ]);
             }
 
-            DB::commit();
+            if ($request->hasFile('files')) {
+                foreach ($request->file('files') as $reqName => $file) {
+                    if ($file) {
+                        $cleanName = str_replace(' ', '-', $file->getClientOriginalName());
+                        $cleanName = preg_replace('/[^A-Za-z0-9\-\.]/', '', $cleanName);
+                        $path = $file->storeAs('order_files/' . $order->id, time() . '_' . $cleanName, 'public');
+                        $order->files()->create([
+                            'file_name' => $cleanName, 'file_path' => $path,
+                            'file_type' => $file->getClientOriginalExtension(), 'category' => $reqName,
+                        ]);
+                    }
+                }
+            }
 
+            DB::commit();
             return redirect()->route('orders.index')->with('success', 'Pekerjaan berhasil dibuat!');
 
         } catch (\Exception $e) {
@@ -108,28 +110,14 @@ class OrderController extends Controller
 
     public function invoice(Order $order)
     {
-        // Load relasi client dan service agar bisa ditampilkan di kwitansi
         $order->load(['client', 'service', 'ppat_detail']);
         $company = Company::first();
-
-        return Inertia::render('Orders/Invoice', [
-            'order' => $order,
-            'company' => $company // Kirim data dinamis dari database
-        ]);
+        return Inertia::render('Orders/Invoice', ['order' => $order, 'company' => $company]);
     }
-        //         'notary_name' => 'ORISTA MIRANTI IRPADA ADAM, S.H., M.Kn.',
-        //         'address' => 'Jl. Jendral Sudirman No. 123, Jakarta Selatan',
-        //         'phone' => '(021) 789-1011',
-        //         'email' => 'admin@notarisdaeng.com'
-        //     ]
-        // ]);
 
-    // HALAMAN EDIT (DETAIL)
     public function edit(Order $order)
     {
-        // UPDATE: Tambahkan 'payments.user' agar riwayat bayar muncul
-        $order->load(['client', 'service', 'files', 'payments.user']);
-
+        $order->load(['client', 'service', 'files', 'payments.user', 'ppat_detail']);
         return Inertia::render('Orders/Edit', [
             'order' => $order,
             'clients' => Client::orderBy('name')->get(),
@@ -137,63 +125,48 @@ class OrderController extends Controller
         ]);
     }
 
-    // PROSES UPDATE DATA
     public function update(Request $request, Order $order)
     {
-        // 1. Validasi (Sama seperti store, tapi status boleh diubah)
-        $validated = $request->validate([
+        $request->validate([
             'client_id' => 'required|exists:clients,id',
             'service_id' => 'required|exists:services,id',
-            'description' => 'nullable|string',
-            'akta_date' => 'nullable|date',
-            'status' => 'required|string', // Tambahan: Update Status
-            'service_price' => 'numeric|min:0',
-            'tax_deposit' => 'numeric|min:0',
-            // PPAT
-            'seller_name' => 'nullable|string',
-            'buyer_name' => 'nullable|string',
-            'land_area' => 'nullable|numeric',
         ]);
 
         DB::beginTransaction();
 
         try {
-            // 2. Update Data Utama
+            $totalAmount = ($request->service_price ?? 0) + ($request->plotting_fee ?? 0) +
+                           ($request->pnbp_fee ?? 0) + ($request->validation_fee ?? 0) +
+                           ($request->bphtb_fee ?? 0) + ($request->pph_fee ?? 0) +
+                           ($request->measurement_fee ?? 0) + ($request->tax_deposit ?? 0) +
+                           ($request->location_check_fee ?? 0) + ($request->area_measurement_fee ?? 0);
+
             $order->update([
-                'client_id' => $request->client_id,
-                'service_id' => $request->service_id,
-                'description' => $request->description,
-                'akta_date' => $request->akta_date,
-                'status' => $request->status, // Update status di sini
-                'service_price' => $request->service_price ?? 0,
-                'tax_deposit' => $request->tax_deposit ?? 0,
-                'total_amount' => ($request->service_price ?? 0) + ($request->tax_deposit ?? 0),
+                'client_id' => $request->client_id, 'service_id' => $request->service_id,
+                'description' => $request->description, 'akta_date' => $request->akta_date,
+                'status' => $request->status ?? $order->status,
+                'service_price' => $request->service_price ?? 0, 'plotting_fee' => $request->plotting_fee ?? 0,
+                'pnbp_fee' => $request->pnbp_fee ?? 0, 'validation_fee' => $request->validation_fee ?? 0,
+                'bphtb_fee' => $request->bphtb_fee ?? 0, 'pph_fee' => $request->pph_fee ?? 0,
+                'measurement_fee' => $request->measurement_fee ?? 0, 'location_check_fee' => $request->location_check_fee ?? 0,
+                'area_measurement_fee' => $request->area_measurement_fee ?? 0, 'tax_deposit' => $request->tax_deposit ?? 0,
+                'total_amount' => $totalAmount, 'additional_info' => $request->additional_info,
             ]);
 
-            // 3. Update Detail PPAT (Jika ada)
             $service = Service::with('type')->find($request->service_id);
-
             if ($service && $service->type->slug === 'ppat') {
-                // Update atau Create jika belum ada
                 $order->ppat_detail()->updateOrCreate(
                     ['order_id' => $order->id],
                     [
                         'seller_name' => $request->seller_name,
-                        'buyer_name' => $request->buyer_name,
-                        'certificate_number' => $request->certificate_number,
-                        'object_address' => $request->object_address,
                         'land_area' => $request->land_area ?? 0,
-                        'building_area' => $request->building_area ?? 0,
-                        'njop' => $request->njop ?? 0,
                         'transaction_value' => $request->transaction_value ?? 0,
-                        'ssp_amount' => $request->ssp_amount ?? 0,
-                        'ssb_amount' => $request->ssb_amount ?? 0,
+                        'njop' => $request->njop ?? 0,
                     ]
                 );
             }
 
             DB::commit();
-
             return redirect()->route('orders.index')->with('success', 'Data pekerjaan berhasil diperbarui!');
 
         } catch (\Exception $e) {
@@ -258,5 +231,4 @@ class OrderController extends Controller
             return back()->withErrors(['error' => 'Gagal menghapus file.']);
         }
     }
-
 }
