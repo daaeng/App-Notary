@@ -9,10 +9,13 @@ class Company extends Model
     protected $fillable = [
         'name',
         'notary_name',
+        'sk_number',      // [BARU]
         'address',
         'phone',
         'email',
-        'bank_account', // Baru
-        'logo_path',    // Baru
+        'bank_name',
+        'account_number',
+        'account_name',
+        'logo_path',
     ];
 }

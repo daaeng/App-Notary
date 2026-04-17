@@ -23,10 +23,11 @@ import {
     Settings,
     Activity,
     Building2,
-    BookOpen
+    BookOpen,
+    Calculator // [BARU] Import icon untuk fitur Simulasi
 } from 'lucide-react';
 import { PageProps } from '@/types';
-import { route } from 'ziggy-js'; // SUDAH DIPERBAIKI DISINI
+import { route } from 'ziggy-js';
 
 export function AppSidebar() {
     const { auth } = usePage<PageProps>().props;
@@ -52,6 +53,14 @@ export function AppSidebar() {
                     url: route('orders.index'),
                     icon: FileText,
                     show: ['super_admin', 'staff', 'bos', 'notaris'].includes(userRole)
+                },
+                // --- [BARU] MENU SIMULASI BIAYA ---
+                {
+                    title: 'Simulasi Biaya',
+                    url: route('simulasi.index'),
+                    icon: Calculator,
+                    // Bisa diakses oleh admin, staf front office, notaris, dan bos
+                    show: ['super_admin', 'staff', 'notaris', 'bos'].includes(userRole)
                 },
                 {
                     title: 'Data Klien',

@@ -11,7 +11,9 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\GlobalSearchController;
 use App\Http\Controllers\NotificationController; // Pastikan import
 use App\Http\Controllers\BackupController;       // Pastikan import
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\RegisterController;
+use App\Http\Controllers\SimulationController;
 use App\Models\Order;
 use App\Models\Expense;
 use App\Models\Schedule;
@@ -131,8 +133,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/notifications-data', [NotificationController::class, 'index'])->name('notifications.data');
     Route::get('/backup-db', [BackupController::class, 'download'])->name('backup.download');
 
-    Route::post('orders/{order}/payments', [App\Http\Controllers\PaymentController::class, 'store'])->name('payments.store');
-    Route::delete('payments/{payment}', [App\Http\Controllers\PaymentController::class, 'destroy'])->name('payments.destroy');
+    // PAYMENT ROUTES (Admin, Staff, Notaris, & BOS)
+    Route::post('orders/{order}/payments', [PaymentController::class, 'store'])->name('orders.payments.store');
+    // Route::post('orders/{order}/payments', [PaymentController::class, 'store'])->name('payments.store');
+    // Route::post('/orders/{order}/payments', [OrderController::class, 'addPayment'])->name('orders.payments.store');
+    // Route::delete('payments/{payment}', [PaymentController::class, 'destroy'])->name('payments.destroy');
 
     // 7. BUKU REGISTER / KLAMPENING (Admin, Staff, Notaris, & BOS)
     // Mas Daeng bisa akses ini karena role Mas adalah IT/Super Admin
@@ -144,6 +149,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Opsional: Route untuk Export PDF/Print jika nanti dibutuhkan
         Route::get('registers/export', [RegisterController::class, 'export'])->name('registers.export');
     });
+
+    // 8. SIMULASI ESTIMASI BIAYA (Bisa diakses semua role yang sudah disebutkan)
+    Route::get('/simulasi', [SimulationController::class, 'index'])->name('simulasi.index');
 
 });
 

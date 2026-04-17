@@ -24,4 +24,10 @@ export default defineConfig({
     esbuild: {
         jsx: 'automatic',
     },
+    server: { // Tambahkan bagian ini
+        host: '0.0.0.0',
+        hmr: {
+            host: '192.168.18.7' // Sesuaikan dengan IP laptop Mas Daeng
+        },
+    },
 });

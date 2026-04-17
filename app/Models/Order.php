@@ -12,21 +12,16 @@ class Order extends Model
 
     protected $guarded = [];
 
-    // --- TAMBAHAN BARU: AGAR LARAVEL BISA MEMBACA INPUTAN SHARLOCK/NO HP ---
     protected $casts = [
         'additional_info' => 'array',
+        'completed_requirements' => 'array', // [BARU] Simpan checklist otomatis
     ];
 
-    // Konfigurasi Logging CCTV
     public function getActivitylogOptions(): LogOptions
     {
-        return LogOptions::defaults()
-            ->logAll()
-            ->logOnlyDirty()
-            ->setDescriptionForEvent(fn(string $eventName) => "Order ini telah di-{$eventName}");
+        return LogOptions::defaults()->logAll()->logOnlyDirty()->setDescriptionForEvent(fn(string $eventName) => "Order ini telah di-{$eventName}");
     }
 
-    // Relasi
     public function client() { return $this->belongsTo(Client::class); }
     public function service() { return $this->belongsTo(Service::class); }
     public function ppat_detail() { return $this->hasOne(OrderPpatDetail::class); }
