@@ -24,7 +24,8 @@ import {
     Activity,
     Building2,
     BookOpen,
-    Calculator // [BARU] Import icon untuk fitur Simulasi
+    Calculator,
+    ListChecks
 } from 'lucide-react';
 import { PageProps } from '@/types';
 import { route } from 'ziggy-js';
@@ -48,6 +49,12 @@ export function AppSidebar() {
         {
             label: 'Operasional',
             items: [
+                {
+                    title: 'Syarat & Ketentuan',
+                    url: route('requirements.index'),
+                    icon: ListChecks,
+                    show: ['super_admin', 'staff', 'notaris', 'bos'].includes(userRole)
+                },
                 {
                     title: 'Order Masuk',
                     url: route('orders.index'),

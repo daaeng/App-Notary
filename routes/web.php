@@ -13,6 +13,7 @@ use App\Http\Controllers\NotificationController; // Pastikan import
 use App\Http\Controllers\BackupController;       // Pastikan import
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\RegisterController;
+use App\Http\Controllers\RequirementController;
 use App\Http\Controllers\SimulationController;
 use App\Models\Order;
 use App\Models\Expense;
@@ -152,6 +153,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // 8. SIMULASI ESTIMASI BIAYA (Bisa diakses semua role yang sudah disebutkan)
     Route::get('/simulasi', [SimulationController::class, 'index'])->name('simulasi.index');
+
+    // 9. PERSYARATAN LAYANAN (Bisa diakses semua role yang sudah disebutkan)
+    Route::get('/persyaratan', [RequirementController::class, 'index'])->name('requirements.index');
 
 });
 

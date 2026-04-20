@@ -48,7 +48,6 @@ export default function OrderEdit({ auth, order, clients, serviceTypes, company 
         if (found) setSelectedService(found);
     }, [data.service_id]);
 
-    // --- LOGIKA KEUANGAN ---
     const calculateTotal = () => {
         return Number(data.service_price) + Number(data.plotting_fee) + Number(data.pnbp_fee) +
                Number(data.validation_fee) + Number(data.bphtb_fee) + Number(data.pph_fee) +
@@ -61,10 +60,9 @@ export default function OrderEdit({ auth, order, clients, serviceTypes, company 
     const sisaTagihan = totalTagihan - totalBayar;
     const persentaseBayar = totalTagihan > 0 ? Math.min((totalBayar / totalTagihan) * 100, 100) : 0;
 
-    // --- FORM PEMBAYARAN BARU (Sesuai PaymentController) ---
     const { data: paymentData, setData: setPaymentData, post: postPayment, processing: paymentProcessing, reset: resetPayment } = useForm({
         amount: sisaTagihan > 0 ? sisaTagihan : '',
-        payment_date: new Date().toISOString().split('T')[0], // Default hari ini
+        payment_date: new Date().toISOString().split('T')[0],
         payment_method: 'Transfer',
         note: '',
         proof_file: null as File | null
@@ -78,7 +76,6 @@ export default function OrderEdit({ auth, order, clients, serviceTypes, company 
 
     const submitPayment: FormEventHandler = (e) => {
         e.preventDefault();
-        // Mengarah ke route payments.store milik PaymentController Mas Daeng
         postPayment(route('payments.store', order.id), {
             forceFormData: true,
             onSuccess: () => {
@@ -133,13 +130,13 @@ export default function OrderEdit({ auth, order, clients, serviceTypes, company 
         return typeof selectedService.active_fee_fields === 'string' ? JSON.parse(selectedService.active_fee_fields) : selectedService.active_fee_fields;
     };
 
-    const cardClass = "bg-[#121214] border border-[#27272a] rounded-2xl p-6 shadow-lg";
-    const inputClass = "w-full bg-[#09090b] border border-[#27272a] text-slate-200 text-sm rounded-xl focus:ring-indigo-500 focus:border-indigo-500 block p-3.5 transition-all outline-none";
+    const cardClass = "bg-[#121214] border border-[#27272a] rounded-[2rem] p-8 shadow-xl";
+    const inputClass = "w-full bg-[#09090b] border border-[#27272a] text-slate-200 text-sm rounded-xl focus:ring-indigo-500 focus:border-indigo-500 block p-3.5 transition-all outline-none shadow-inner";
     const labelClass = "block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1";
-    const sectionTitle = "text-base font-black text-white mb-6 flex items-center gap-2 uppercase tracking-wide";
+    const sectionTitle = "text-lg font-black text-white mb-8 flex items-center gap-3 uppercase tracking-wide";
 
     return (
-        <AppLayout breadcrumbs={[{ title: 'Order', href: '/orders' }, { title: `#${order.order_number}`, href: '#' }]}>
+        <AppLayout breadcrumbs={[{ title: 'Order Masuk', href: '/orders' }, { title: `#${order.order_number}`, href: '#' }]}>
             <Head title={`Edit Order ${order.order_number}`} />
 
             <div className="min-h-screen bg-gray-50 dark:bg-black p-4 lg:p-8 font-sans">
@@ -162,13 +159,13 @@ export default function OrderEdit({ auth, order, clients, serviceTypes, company 
                         </div>
                     </div>
 
-                    <form onSubmit={submitUpdate} className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                    <form onSubmit={submitUpdate} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
                         {/* === KOLOM KIRI === */}
                         <div className="lg:col-span-7 space-y-6">
 
                             <div className={cardClass}>
-                                <h3 className={sectionTitle}><ShieldCheck className="text-indigo-500" size={20}/> Informasi Pekerjaan</h3>
+                                <h3 className={sectionTitle}><ShieldCheck className="text-indigo-500" size={24}/> Informasi Pekerjaan</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                                     <div><label className={labelClass}>Klien (Pemohon)</label><select value={data.client_id} onChange={e => setData('client_id', e.target.value)} className={inputClass}><option value="">-- Pilih Klien --</option>{clients.map((c: any) => <option key={c.id} value={c.id}>{c.name} - {c.phone}</option>)}</select></div>
                                     <div>
@@ -180,7 +177,7 @@ export default function OrderEdit({ auth, order, clients, serviceTypes, company 
                                 </div>
                                 <div className="mb-5">
                                     <label className={labelClass}>Jenis Layanan</label>
-                                    <select value={data.service_id} onChange={e => setData('service_id', e.target.value)} className={inputClass}><option value="">-- Pilih Layanan --</option>{serviceTypes.map((type: any) => (<optgroup key={type.id} label={type.name}>{type.services.map((svc: any) => <option key={svc.id} value={svc.id}>{svc.name}</option>)}</optgroup>))}</select>
+                                    <select value={data.service_id} onChange={e => setData('service_id', e.target.value)} className={`${inputClass} font-bold text-white`}><option value="">-- Pilih Layanan --</option>{serviceTypes.map((type: any) => (<optgroup key={type.id} label={type.name} className="text-slate-500 uppercase">{type.services.map((svc: any) => <option key={svc.id} value={svc.id} className="text-white normal-case">{svc.name}</option>)}</optgroup>))}</select>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div><label className={labelClass}>Tanggal Akta</label><input type="date" value={data.akta_date} onChange={e => setData('akta_date', e.target.value)} className={inputClass} /></div>
@@ -189,7 +186,7 @@ export default function OrderEdit({ auth, order, clients, serviceTypes, company 
                             </div>
 
                             <div className={cardClass}>
-                                <h3 className={sectionTitle}><MapPin className="text-rose-500" size={20}/> Detail Objek Tanah / Bangunan</h3>
+                                <h3 className={sectionTitle}><MapPin className="text-rose-500" size={24}/> Detail Objek Tanah / Bangunan</h3>
                                 <div className="space-y-5">
                                     <div><label className={labelClass}>Atas Nama (A.n)</label><input type="text" value={data.seller_name} onChange={e => setData('seller_name', e.target.value)} className={inputClass} placeholder="Sesuai Sertifikat..." /></div>
                                     <div className="grid grid-cols-3 gap-5">
@@ -202,7 +199,7 @@ export default function OrderEdit({ auth, order, clients, serviceTypes, company 
 
                             {(getReqs().uploads.length > 0 || order.files?.length > 0) && (
                                 <div className={cardClass}>
-                                    <h3 className={sectionTitle}><Upload className="text-indigo-400" size={20}/> Progress Berkas & Scan Dokumen</h3>
+                                    <h3 className={sectionTitle}><Upload className="text-indigo-400" size={24}/> Progress Berkas & Scan Dokumen</h3>
                                     {order.files?.length > 0 && (
                                         <div className="mb-8">
                                             <p className="text-[10px] font-bold text-slate-500 mb-3 tracking-widest uppercase">Arsip Tersimpan:</p>
@@ -229,12 +226,12 @@ export default function OrderEdit({ auth, order, clients, serviceTypes, company 
                                             const isChecked = data.completed_requirements.includes(req) || isUploadedInDB;
                                             return (
                                             <div key={i} className={`flex items-center justify-between p-4 rounded-xl border transition-all ${isChecked ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-[#27272a] bg-[#09090b]'}`}>
-                                                <div className="flex items-center gap-4">
-                                                    <input type="checkbox" checked={isChecked} onChange={() => toggleRequirement(req)} disabled={isUploadedInDB} className="w-5 h-5 rounded border-[#27272a] bg-[#18181b] text-emerald-500 focus:ring-emerald-500 cursor-pointer" />
-                                                    <span className={`text-xs font-bold uppercase tracking-wider ${isChecked ? 'text-emerald-500' : 'text-slate-400'}`}>{req}</span>
+                                                <div className="flex items-center gap-4 pr-4">
+                                                    <input type="checkbox" checked={isChecked} onChange={() => toggleRequirement(req)} disabled={isUploadedInDB} className="w-5 h-5 rounded border-[#27272a] bg-[#18181b] text-emerald-500 focus:ring-emerald-500 cursor-pointer shrink-0" />
+                                                    <span className={`text-xs font-bold uppercase tracking-wider leading-snug ${isChecked ? 'text-emerald-500' : 'text-slate-300'}`}>{req}</span>
                                                 </div>
                                                 {!isUploadedInDB && (
-                                                    <label className="cursor-pointer px-4 py-2 bg-[#18181b] text-slate-300 border border-[#27272a] rounded-lg hover:bg-indigo-600 hover:text-white hover:border-indigo-500 transition-all text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                                                    <label className="cursor-pointer px-4 py-2 bg-[#18181b] text-slate-300 border border-[#27272a] rounded-xl hover:bg-indigo-600 hover:text-white hover:border-indigo-500 transition-all text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 shrink-0">
                                                         <Upload size={14} /> Upload <input type="file" className="hidden" onChange={e => handleFileChange(req, e.target.files![0])} />
                                                     </label>
                                                 )}
@@ -267,55 +264,56 @@ export default function OrderEdit({ auth, order, clients, serviceTypes, company 
                             <div className={`${cardClass} border-emerald-500/20 bg-emerald-500/5`}>
                                 <h4 className="text-emerald-500 font-bold text-[10px] uppercase tracking-widest mb-4 flex items-center gap-2"><Wallet size={14} /> Metode Pembayaran Klien</h4>
                                 <div className="space-y-3 text-xs text-slate-400">
-                                    <div className="flex justify-between border-b border-emerald-500/10 pb-2"><span>Bank</span><span className="font-bold text-black dark:text-white">{company?.bank_name || '-'}</span></div>
-                                    <div className="flex justify-between border-b border-emerald-500/10 pb-2"><span>No. Rekening</span><span className="font-mono font-bold text-emerald-600">{company?.account_number || '-'}</span></div>
-                                    <div className="flex justify-between pt-1"><span>Atas Nama</span><span className="font-bold text-black dark:text-white uppercase">{company?.account_name || '-'}</span></div>
+                                    <div className="flex justify-between border-b border-emerald-500/10 pb-2"><span>Bank</span><span className="font-bold text-white">{company?.bank_name || '-'}</span></div>
+                                    <div className="flex justify-between border-b border-emerald-500/10 pb-2"><span>No. Rekening</span><span className="font-mono font-bold text-emerald-400">{company?.account_number || '-'}</span></div>
+                                    <div className="flex justify-between pt-1"><span>Atas Nama</span><span className="font-bold text-white uppercase">{company?.account_name || '-'}</span></div>
                                 </div>
                             </div>
 
                             {/* RINCIAN TAGIHAN */}
                             <div className={cardClass}>
-                                <h3 className={sectionTitle}><Calculator className="text-emerald-500" size={20}/> Rincian Tagihan</h3>
+                                <h3 className={sectionTitle}><Calculator className="text-emerald-500" size={24}/> Rincian Tagihan</h3>
 
                                 <div className="space-y-5 mb-8">
-                                    <div><label className={labelClass}>Honorarium Utama</label><input type="number" value={data.service_price} onChange={e => setData('service_price', Number(e.target.value))} className={`${inputClass} text-lg font-black text-white`} /></div>
+                                    <div><label className={labelClass}>Honorarium Jasa / Utama</label><input type="number" value={data.service_price} onChange={e => setData('service_price', Number(e.target.value))} className={`${inputClass} text-lg font-black text-emerald-400 border-emerald-500/30`} /></div>
+
                                     <div className="grid grid-cols-2 gap-5">
-                                        {getActiveFees().includes('plotting') && (<div><label className={labelClass}>Plotting</label><input type="number" value={data.plotting_fee} onChange={e => setData('plotting_fee', Number(e.target.value))} className={inputClass} /></div>)}
+                                        {getActiveFees().includes('plotting') && (<div><label className={labelClass}>Plotting & Biaya Lain</label><input type="number" value={data.plotting_fee} onChange={e => setData('plotting_fee', Number(e.target.value))} className={inputClass} /></div>)}
                                         {getActiveFees().includes('penataan_batas') && (<div><label className={labelClass}>Penataan Batas</label><input type="number" value={data.measurement_fee} onChange={e => setData('measurement_fee', Number(e.target.value))} className={inputClass} /></div>)}
-                                        {getActiveFees().includes('pengecekan_lokasi') && (<div><label className={labelClass}>Pengecekan Lokasi</label><input type="number" value={data.location_check_fee} onChange={e => setData('location_check_fee', Number(e.target.value))} className={inputClass} /></div>)}
-                                        {getActiveFees().includes('pengukuran') && (<div><label className={labelClass}>Pengukuran</label><input type="number" value={data.area_measurement_fee} onChange={e => setData('area_measurement_fee', Number(e.target.value))} className={inputClass} /></div>)}
-                                        {getActiveFees().includes('pnbp') && (<div><label className={labelClass}>PNBP</label><input type="number" value={data.pnbp_fee} onChange={e => setData('pnbp_fee', Number(e.target.value))} className={inputClass} /></div>)}
+                                        {getActiveFees().includes('location_check_fee') && (<div><label className={labelClass}>Pengecekan Lokasi</label><input type="number" value={data.location_check_fee} onChange={e => setData('location_check_fee', Number(e.target.value))} className={inputClass} /></div>)}
+                                        {getActiveFees().includes('area_measurement_fee') && (<div><label className={labelClass}>Pengukuran Tanah</label><input type="number" value={data.area_measurement_fee} onChange={e => setData('area_measurement_fee', Number(e.target.value))} className={inputClass} /></div>)}
+                                        {getActiveFees().includes('pnbp') && (<div><label className={labelClass}>PNBP Negara</label><input type="number" value={data.pnbp_fee} onChange={e => setData('pnbp_fee', Number(e.target.value))} className={inputClass} /></div>)}
                                         {getActiveFees().includes('validasi_pajak') && (<div><label className={labelClass}>Validasi Pajak</label><input type="number" value={data.validation_fee} onChange={e => setData('validation_fee', Number(e.target.value))} className={inputClass} /></div>)}
-                                        {getActiveFees().includes('bphtb') && (<div className="col-span-2"><label className={labelClass}>Pajak Pembeli/Penerima (BPHTB)</label><input type="number" value={data.bphtb_fee} onChange={e => setData('bphtb_fee', Number(e.target.value))} className={inputClass} /></div>)}
-                                        {getActiveFees().includes('pph') && (<div className="col-span-2"><label className={labelClass}>Pajak Penjual/Pengalih (PPh)</label><input type="number" value={data.pph_fee} onChange={e => setData('pph_fee', Number(e.target.value))} className={inputClass} /></div>)}
-                                        <div className="col-span-2"><label className={labelClass}>Balik Nama SPPT</label><input type="number" value={data.tax_deposit} onChange={e => setData('tax_deposit', Number(e.target.value))} className={inputClass} /></div>
+                                        {getActiveFees().includes('bphtb') && (<div className="col-span-2"><label className={labelClass}>Pajak Pembeli / Penerima (BPHTB)</label><input type="number" value={data.bphtb_fee} onChange={e => setData('bphtb_fee', Number(e.target.value))} className={inputClass} /></div>)}
+                                        {getActiveFees().includes('pph') && (<div className="col-span-2"><label className={labelClass}>Pajak Penjual / Pengalih (PPh)</label><input type="number" value={data.pph_fee} onChange={e => setData('pph_fee', Number(e.target.value))} className={inputClass} /></div>)}
+                                        {getActiveFees().includes('tax_deposit') && (<div className="col-span-2"><label className={labelClass}>Balik Nama SPPT</label><input type="number" value={data.tax_deposit} onChange={e => setData('tax_deposit', Number(e.target.value))} className={inputClass} /></div>)}
                                     </div>
                                 </div>
 
-                                <div className="p-5 bg-[#09090b] rounded-xl border border-[#27272a] mb-6">
+                                <div className="p-6 bg-[#09090b] rounded-2xl border border-[#27272a] mb-6">
                                     <div className="flex justify-between items-center">
-                                        <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Total Tagihan</span>
-                                        <span className="text-2xl font-black text-indigo-400">{rupiah(totalTagihan)}</span>
+                                        <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Total Tagihan</span>
+                                        <span className="text-3xl font-black text-indigo-400 tracking-tighter">{rupiah(totalTagihan)}</span>
                                     </div>
                                 </div>
 
                                 {/* --- PROGRESS PEMBAYARAN & TOMBOL BAYAR --- */}
-                                <div className="p-5 bg-[#09090b] rounded-xl border border-[#27272a] mb-6">
+                                <div className="p-6 bg-[#09090b] rounded-2xl border border-[#27272a] mb-8">
                                     <div className="flex justify-between text-xs mb-3 font-bold text-slate-400 uppercase tracking-widest">
                                         <span className="text-emerald-500">Terbayar: {rupiah(totalBayar)}</span>
                                         <span className="text-orange-500">Sisa: {rupiah(sisaTagihan)}</span>
                                     </div>
 
-                                    <div className="w-full bg-[#27272a] h-2 rounded-full overflow-hidden mb-5">
+                                    <div className="w-full bg-[#27272a] h-2.5 rounded-full overflow-hidden mb-5">
                                         <div className={`h-full transition-all duration-700 ease-out ${persentaseBayar >= 100 ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.5)]'}`} style={{ width: `${persentaseBayar}%` }}></div>
                                     </div>
 
                                     <div className="flex justify-between items-center pt-4 border-t border-[#27272a]">
-                                        <span className={`text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1.5 rounded border ${persentaseBayar >= 100 ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-orange-500/10 text-orange-500 border-orange-500/20'}`}>
+                                        <span className={`text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1.5 rounded-lg border ${persentaseBayar >= 100 ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-orange-500/10 text-orange-500 border-orange-500/20'}`}>
                                             Status: {persentaseBayar >= 100 ? 'LUNAS' : 'BELUM LUNAS'}
                                         </span>
                                         {sisaTagihan > 0 && (
-                                            <button type="button" onClick={() => { setPaymentData('amount', sisaTagihan); setShowPaymentModal(true); }} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-[10px] uppercase tracking-widest transition-all">
+                                            <button type="button" onClick={() => { setPaymentData('amount', sisaTagihan); setShowPaymentModal(true); }} className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-[10px] uppercase tracking-widest transition-all">
                                                 <PlusCircle size={14} /> Tambah Pembayaran
                                             </button>
                                         )}
@@ -323,17 +321,17 @@ export default function OrderEdit({ auth, order, clients, serviceTypes, company 
 
                                     {/* RIWAYAT PEMBAYARAN */}
                                     {order.payments && order.payments.length > 0 && (
-                                        <div className="mt-4 pt-4 border-t border-[#27272a]">
+                                        <div className="mt-5 pt-5 border-t border-[#27272a]">
                                             <p className="text-[10px] font-bold text-slate-500 mb-3 tracking-widest uppercase">Riwayat Pembayaran:</p>
                                             <div className="space-y-2">
                                                 {order.payments.map((pay: any) => (
-                                                    <div key={pay.id} className="flex justify-between items-center p-3 bg-[#121214] rounded-lg border border-[#27272a]">
+                                                    <div key={pay.id} className="flex justify-between items-center p-4 bg-[#121214] rounded-xl border border-[#27272a]">
                                                         <div>
-                                                            <p className="text-xs font-bold text-emerald-400">{rupiah(pay.amount)}</p>
-                                                            <p className="text-[10px] text-slate-500">{new Date(pay.payment_date).toLocaleDateString('id-ID')} • {pay.payment_method}</p>
+                                                            <p className="text-sm font-bold text-emerald-400">{rupiah(pay.amount)}</p>
+                                                            <p className="text-[10px] text-slate-500 mt-0.5 uppercase tracking-widest">{new Date(pay.payment_date).toLocaleDateString('id-ID')} • {pay.payment_method}</p>
                                                         </div>
-                                                        <button type="button" onClick={() => deletePayment(pay.id)} className="text-red-500 hover:text-red-400 p-1.5 bg-red-500/10 rounded-md transition-colors" title="Hapus Pembayaran">
-                                                            <Trash2 size={12}/>
+                                                        <button type="button" onClick={() => deletePayment(pay.id)} className="text-red-500 hover:text-white hover:bg-red-500 p-2.5 bg-red-500/10 rounded-lg transition-colors border border-red-500/20" title="Hapus Pembayaran">
+                                                            <Trash2 size={14}/>
                                                         </button>
                                                     </div>
                                                 ))}
@@ -342,7 +340,7 @@ export default function OrderEdit({ auth, order, clients, serviceTypes, company 
                                     )}
                                 </div>
 
-                                <button type="submit" disabled={processing} className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(79,70,229,0.3)]">
+                                <button type="submit" disabled={processing} className="w-full py-5 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-xl text-xs uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(79,70,229,0.3)] active:scale-95">
                                     {processing ? 'Menyimpan...' : 'Simpan Perubahan Data'}
                                 </button>
                             </div>
@@ -353,17 +351,17 @@ export default function OrderEdit({ auth, order, clients, serviceTypes, company 
 
             {/* --- MODAL TAMBAH PEMBAYARAN --- */}
             {showPaymentModal && (
-                <div className="fixed inset-0 z-[99] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                    <div className="bg-[#121214] border border-[#27272a] rounded-[2rem] p-8 max-w-md w-full shadow-2xl">
+                <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                    <div className="bg-[#121214] border border-[#27272a] rounded-[2.5rem] p-8 max-w-md w-full shadow-2xl">
                         <h3 className="text-xl font-black text-white mb-6 uppercase tracking-tight flex items-center gap-3">
                             <Wallet className="text-emerald-500"/> Tambah Pembayaran
                         </h3>
                         <form onSubmit={submitPayment}>
-                            <div className="space-y-4 mb-8">
+                            <div className="space-y-5 mb-8">
                                 <div>
                                     <label className={labelClass}>Nominal Bayar (Rp)</label>
-                                    <input type="number" value={paymentData.amount} onChange={e => setPaymentData('amount', Number(e.target.value))} className={`${inputClass} text-emerald-400 font-bold text-lg`} max={sisaTagihan} required />
-                                    <p className="text-[10px] text-slate-500 mt-1">Sisa Tagihan: {rupiah(sisaTagihan)}</p>
+                                    <input type="number" value={paymentData.amount} onChange={e => setPaymentData('amount', Number(e.target.value))} className={`${inputClass} text-emerald-400 font-black text-xl`} max={sisaTagihan} required />
+                                    <p className="text-[10px] text-slate-500 mt-2 font-bold uppercase tracking-widest">Sisa Tagihan: <span className="text-orange-500">{rupiah(sisaTagihan)}</span></p>
                                 </div>
                                 <div>
                                     <label className={labelClass}>Tanggal Pembayaran</label>
@@ -378,17 +376,17 @@ export default function OrderEdit({ auth, order, clients, serviceTypes, company 
                                 </div>
                                 <div>
                                     <label className={labelClass}>Bukti Transfer (Opsional)</label>
-                                    <input type="file" onChange={handleProofChange} className="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-[#27272a] file:text-slate-300 hover:file:bg-[#3f3f46] transition-all" accept="image/*" />
+                                    <input type="file" onChange={handleProofChange} className="block w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#27272a] file:text-slate-300 hover:file:bg-[#3f3f46] transition-all cursor-pointer" accept="image/*" />
                                 </div>
                                 <div>
                                     <label className={labelClass}>Catatan (Opsional)</label>
                                     <input type="text" value={paymentData.note} onChange={e => setPaymentData('note', e.target.value)} className={inputClass} placeholder="Contoh: DP 50% atau Pelunasan..." />
                                 </div>
                             </div>
-                            <div className="flex gap-3">
-                                <button type="button" onClick={() => setShowPaymentModal(false)} className="flex-1 py-3 bg-[#27272a] text-white font-bold rounded-xl hover:bg-[#3f3f46] text-xs uppercase tracking-widest transition">Batal</button>
-                                <button type="submit" disabled={paymentProcessing} className="flex-1 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-500 text-xs uppercase tracking-widest transition shadow-[0_0_15px_rgba(16,185,129,0.3)]">
-                                    Simpan
+                            <div className="flex gap-4">
+                                <button type="button" onClick={() => setShowPaymentModal(false)} className="flex-1 py-4 bg-[#27272a] text-white font-bold rounded-xl hover:bg-[#3f3f46] text-xs uppercase tracking-widest transition">Batal</button>
+                                <button type="submit" disabled={paymentProcessing} className="flex-1 py-4 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-500 text-xs uppercase tracking-widest transition shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+                                    Simpan Bukti
                                 </button>
                             </div>
                         </form>
@@ -398,16 +396,16 @@ export default function OrderEdit({ auth, order, clients, serviceTypes, company 
 
             {/* MODAL HAPUS ORDER */}
             {showDeleteModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                    <div className="bg-[#121214] border border-red-500/20 rounded-3xl p-8 max-w-sm w-full shadow-2xl">
-                        <div className="w-16 h-16 bg-red-500/10 text-red-500 flex items-center justify-center rounded-full mx-auto mb-4"><Trash2 size={24}/></div>
-                        <h3 className="text-xl font-black text-white text-center mb-2 tracking-tight">Hapus Permanen?</h3>
+                <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                    <div className="bg-[#121214] border border-red-500/20 rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl">
+                        <div className="w-20 h-20 bg-red-500/10 text-red-500 flex items-center justify-center rounded-full mx-auto mb-6"><Trash2 size={32}/></div>
+                        <h3 className="text-2xl font-black text-white text-center mb-2 tracking-tight">Hapus Permanen?</h3>
                         <p className="text-slate-400 text-xs text-center mb-8 leading-relaxed">
                             Aksi ini tidak dapat dibatalkan. Semua data terkait order <span className="text-white font-bold">#{order.order_number}</span> akan dihapus selamanya.
                         </p>
                         <div className="flex gap-3">
-                            <button type="button" onClick={() => setShowDeleteModal(false)} className="flex-1 py-3 bg-[#27272a] text-white font-bold rounded-xl hover:bg-[#3f3f46] text-xs uppercase tracking-widest transition">Batal</button>
-                            <button type="button" onClick={confirmDeleteOrder} className="flex-1 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-500 text-xs uppercase tracking-widest transition">Hapus</button>
+                            <button type="button" onClick={() => setShowDeleteModal(false)} className="flex-1 py-4 bg-[#27272a] text-white font-bold rounded-xl hover:bg-[#3f3f46] text-xs uppercase tracking-widest transition">Batal</button>
+                            <button type="button" onClick={confirmDeleteOrder} className="flex-1 py-4 bg-red-600 text-white font-bold rounded-xl hover:bg-red-500 text-xs uppercase tracking-widest transition shadow-[0_0_15px_rgba(220,38,38,0.3)]">Hapus</button>
                         </div>
                     </div>
                 </div>
