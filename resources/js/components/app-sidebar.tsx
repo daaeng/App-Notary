@@ -53,13 +53,13 @@ export function AppSidebar() {
                     title: 'Syarat & Ketentuan',
                     url: route('requirements.index'),
                     icon: ListChecks,
-                    show: ['super_admin', 'staff', 'notaris', 'bos'].includes(userRole)
+                    show: ['super_admin', 'staff', 'bos'].includes(userRole)
                 },
                 {
                     title: 'Order Masuk',
                     url: route('orders.index'),
                     icon: FileText,
-                    show: ['super_admin', 'staff', 'bos', 'notaris'].includes(userRole)
+                    show: ['super_admin', 'staff', 'bos'].includes(userRole)
                 },
                 // --- [BARU] MENU SIMULASI BIAYA ---
                 {
@@ -67,7 +67,7 @@ export function AppSidebar() {
                     url: route('simulasi.index'),
                     icon: Calculator,
                     // Bisa diakses oleh admin, staf front office, notaris, dan bos
-                    show: ['super_admin', 'staff', 'notaris', 'bos'].includes(userRole)
+                    show: ['super_admin', 'staff', 'bos'].includes(userRole)
                 },
                 {
                     title: 'Data Klien',
@@ -85,7 +85,7 @@ export function AppSidebar() {
                     title: 'Buku Register',
                     url: route('registers.index'),
                     icon: BookOpen,
-                    show: ['super_admin', 'staff', 'notaris', 'bos'].includes(userRole)
+                    show: ['super_admin', 'staff', 'bos'].includes(userRole)
                 },
             ]
         },
@@ -96,7 +96,7 @@ export function AppSidebar() {
                     title: 'Laporan & Invoice',
                     url: route('reports.index'),
                     icon: BarChart3,
-                    show: ['super_admin', 'notaris', 'bos'].includes(userRole)
+                    show: ['super_admin', 'bos'].includes(userRole)
                 },
                 {
                     title: 'Pengeluaran',

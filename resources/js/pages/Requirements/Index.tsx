@@ -3,16 +3,16 @@ import AppLayout from '@/layouts/app-layout';
 import { Head } from '@inertiajs/react';
 import { FileText, Search, BookOpenCheck, CheckCircle2, Info, ArrowRight, X, MousePointerClick, Printer, Calculator } from 'lucide-react';
 
-export default function RequirementsIndex({ serviceTypes }: any) {
+export default function RequirementsIndex({ serviceTypes = [] }: any) {
     const [searchTerm, setSearchTerm] = useState('');
 
     // --- STATE UNTUK MODAL ---
     const [selectedService, setSelectedService] = useState<any>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    // Fungsi untuk memfilter data berdasarkan pencarian
-    const filteredServiceTypes = serviceTypes.map((type: any) => {
-        const filteredServices = type.services.filter((svc: any) =>
+    // Mencegah error "reading map of undefined" dengan fallback array kosong
+    const filteredServiceTypes = (serviceTypes || []).map((type: any) => {
+        const filteredServices = (type.services || []).filter((svc: any) =>
             svc.name.toLowerCase().includes(searchTerm.toLowerCase())
         );
         return { ...type, services: filteredServices };
@@ -67,26 +67,49 @@ export default function RequirementsIndex({ serviceTypes }: any) {
         <AppLayout breadcrumbs={[{ title: 'Kamus Persyaratan', href: '/persyaratan' }]}>
             <Head title="Kamus Persyaratan Layanan" />
 
-            {/* CSS KHUSUS PRINT - DIPERBAIKI AGAR TIDAK TERPOTONG */}
+            {/* CSS KHUSUS PRINT */}
             <style>{`
                 @media print {
-                    @page { size: A4 portrait; margin: 1.5cm; }
+                    @page { size: A4 portrait; margin: 1cm; }
                     body * { visibility: hidden; }
+
                     #printable-modal, #printable-modal * { visibility: visible; }
+
                     #printable-modal {
                         position: absolute !important;
-                        left: 0;
-                        top: 0;
-                        width: 100%;
+                        left: 0 !important;
+                        top: 0 !important;
+                        width: 100% !important;
                         height: auto !important;
-                        background: white;
-                        margin: 0;
-                        padding: 0;
+                        background: white !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
                         overflow: visible !important;
-                        font-family: 'Times New Roman', Times, serif !important;
-                        color: black !important;
+                        display: block !important;
                     }
-                    .print-formal-text { font-family: 'Times New Roman', Times, serif !important; }
+
+                    #printable-content-wrapper {
+                        position: relative !important;
+                        height: auto !important;
+                        max-height: none !important;
+                        overflow: visible !important;
+                        display: block !important;
+                        border: none !important;
+                        box-shadow: none !important;
+                    }
+
+                    #printable-scroll-area {
+                        overflow: visible !important;
+                        height: auto !important;
+                        max-height: none !important;
+                        display: block !important;
+                    }
+
+                    .print-formal-text { font-family: 'Times New Roman', Times, serif !important; color: black !important; }
+
+                    tr, td, th { page-break-inside: avoid !important; }
+                    li, div { page-break-inside: avoid; }
+
                     ::-webkit-scrollbar { display: none; }
                 }
             `}</style>
@@ -160,15 +183,15 @@ export default function RequirementsIndex({ serviceTypes }: any) {
 
             {/* --- MODAL POPUP PERSYARATAN & BIAYA --- */}
             {isModalOpen && selectedService && (
-                <div id="printable-modal" className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm transition-opacity print:absolute print:inset-0 print:block print:p-0 print:h-auto print:overflow-visible">
-                    <div className="bg-white dark:bg-[#121214] border border-gray-200 dark:border-[#27272a] rounded-[2.5rem] shadow-2xl max-w-3xl w-full p-8 max-h-[90vh] flex flex-col relative animate-fade-in-up print:shadow-none print:border-none print:max-h-none print:h-auto print:p-4 print:block print:w-full print:max-w-full">
+                <div id="printable-modal" className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm transition-opacity print:static print:block print:p-0 print:bg-white print:overflow-visible">
+                    <div id="printable-content-wrapper" className="bg-white dark:bg-[#121214] border border-gray-200 dark:border-[#27272a] rounded-[2.5rem] shadow-2xl max-w-3xl w-full p-8 max-h-[90vh] flex flex-col relative animate-fade-in-up print:shadow-none print:border-none print:max-h-none print:h-auto print:p-4 print:block print:w-full print:max-w-full">
 
                         <div className="absolute top-6 right-6 flex gap-2 print:hidden">
                             <button onClick={() => window.print()} className="p-2.5 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 rounded-full transition-colors shadow-sm" title="Cetak Persyaratan"><Printer size={20} /></button>
                             <button onClick={closeModal} className="p-2.5 bg-gray-100 dark:bg-black text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-500 rounded-full transition-colors shadow-sm" title="Tutup Modal"><X size={20} /></button>
                         </div>
 
-                        {/* HEADER MODAL / KOP CETAKAN (Lebih Kecil) */}
+                        {/* HEADER MODAL / KOP CETAKAN */}
                         <div className="mb-6 pr-24 print:pr-0 border-b border-gray-100 dark:border-[#27272a] print:border-black print:border-b-2 pb-4 print:pb-4 shrink-0 print-formal-text">
                             <div className="hidden print:block mb-4 text-center border-b-2 border-black pb-4">
                                 <h1 className="text-lg font-black uppercase tracking-widest text-black">PERSYARATAN BERKAS LAYANAN</h1>
@@ -180,8 +203,8 @@ export default function RequirementsIndex({ serviceTypes }: any) {
                             </h2>
                         </div>
 
-                        {/* ISI KONTEN (Spacing & Font Disesuaikan) */}
-                        <div className="overflow-y-auto pr-2 custom-scrollbar space-y-6 flex-1 print:overflow-visible print:pr-0 print-formal-text print:space-y-4">
+                        {/* ISI KONTEN */}
+                        <div id="printable-scroll-area" className="overflow-y-auto pr-2 custom-scrollbar space-y-6 flex-1 print:overflow-visible print:h-auto print:block print:pr-0 print-formal-text print:space-y-4">
 
                             {/* DOKUMEN FISIK */}
                             <div>
@@ -189,12 +212,14 @@ export default function RequirementsIndex({ serviceTypes }: any) {
                                     <FileText size={16} className="text-emerald-500 print:hidden"/> Dokumen Fisik / Scan yang Disiapkan:
                                 </h4>
                                 {getReqs(selectedService.requirements).uploads && getReqs(selectedService.requirements).uploads.length > 0 ? (
-                                    <ul className="space-y-3 px-2 print:px-0 print:space-y-2">
+                                    <ul className="space-y-3 px-2 print:px-0 print:space-y-3">
                                         {getReqs(selectedService.requirements).uploads.map((req: string, i: number) => (
-                                            <li key={i} className="flex items-start gap-4 text-sm text-slate-700 dark:text-slate-300 print:text-black font-medium leading-relaxed print:text-sm">
+                                            <li key={i} className="flex items-start gap-3 text-sm text-slate-700 dark:text-slate-300 print:text-black font-medium leading-relaxed print:text-sm">
                                                 <div className="print:hidden mt-0.5"><CheckCircle2 size={18} className="text-emerald-500 shrink-0" /></div>
-                                                <div className="hidden print:flex font-bold text-sm shrink-0 mt-0">{i + 1}.</div>
-                                                <span className="print:mt-0">{req}</span>
+                                                {/* KOTAK CHECKLIST UNTUK CETAK */}
+                                                <div className="hidden print:block w-[14px] h-[14px] border-[1.5px] border-black shrink-0 mt-[3px]"></div>
+                                                <div className="hidden print:block font-bold text-sm shrink-0 w-4">{i + 1}.</div>
+                                                <span className="print:mt-0 flex-1">{req}</span>
                                             </li>
                                         ))}
                                     </ul>
@@ -209,19 +234,21 @@ export default function RequirementsIndex({ serviceTypes }: any) {
                                     <h4 className="text-xs font-black text-slate-800 dark:text-white print:text-black print:text-sm print:bg-transparent print:border-none print:p-0 print:mb-3 uppercase tracking-widest mb-4 flex items-center gap-2 bg-gray-50 dark:bg-black/50 p-3 rounded-xl border border-gray-100 dark:border-zinc-800/50">
                                         <Info size={16} className="text-amber-500 print:hidden"/> INFO TAMBAHAN:
                                     </h4>
-                                    <ul className="space-y-3 px-2 print:px-0 print:space-y-2 print:pl-5">
+                                    <ul className="space-y-3 px-2 print:px-0 print:space-y-3 print:pl-2">
                                         {getReqs(selectedService.requirements).inputs.map((req: string, i: number) => (
                                             <li key={i} className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400 print:text-black leading-relaxed print:text-sm">
                                                 <ArrowRight size={18} className="text-amber-500 shrink-0 mt-0.5 print:hidden" />
+                                                {/* KOTAK CHECKLIST UNTUK CETAK */}
+                                                <div className="hidden print:block w-[14px] h-[14px] border-[1.5px] border-black shrink-0 mt-[3px]"></div>
                                                 <span className="hidden print:inline-block font-black text-sm mr-1">-</span>
-                                                <span className="print:mt-0">{req}</span>
+                                                <span className="print:mt-0 flex-1">{req}</span>
                                             </li>
                                         ))}
                                     </ul>
                                 </div>
                             )}
 
-                            {/* --- TABEL RINCIAN BIAYA (HANYA PPAT) --- */}
+                            {/* --- TABEL RINCIAN BIAYA (HANYA PPAT) ---
                             {selectedService.category_name?.toLowerCase() !== 'notaris' && (
                                 <div className="print:mt-6">
                                     <h4 className="text-xs font-black text-slate-800 dark:text-white print:text-black print:text-sm print:bg-transparent print:border-none print:p-0 print:mb-2 uppercase tracking-widest mb-4 flex items-center gap-2 bg-gray-50 dark:bg-black/50 p-3 rounded-xl border border-gray-100 dark:border-zinc-800/50">
@@ -244,10 +271,10 @@ export default function RequirementsIndex({ serviceTypes }: any) {
                                                     </td>
                                                     <td className="p-3 text-right print:p-1.5">
                                                         <span className="font-black text-emerald-600 dark:text-emerald-400 print:hidden">
-                                                            Menyesuaikan Objek
+                                                            {selectedService.default_price > 0 ? rupiah(selectedService.default_price) : '-'}
                                                         </span>
                                                         <span className="hidden print:block text-sm font-bold whitespace-nowrap">
-                                                            Rp. ......................
+                                                            Rp. {selectedService.default_price > 0 ? selectedService.default_price.toLocaleString('id-ID') : '......................'}
                                                         </span>
                                                     </td>
                                                 </tr>
@@ -275,10 +302,10 @@ export default function RequirementsIndex({ serviceTypes }: any) {
                                         </table>
                                     </div>
                                 </div>
-                            )}
+                            )} */}
                         </div>
 
-                        {/* FOOTER TANDA TANGAN CETAK (Dikecilkan jaraknya) */}
+                        {/* FOOTER TANDA TANGAN CETAK (Dikecilkan jaraknya)
                         <div className="hidden print:flex justify-between items-end mt-12 text-sm font-medium text-black px-10 print-formal-text">
                             <div className="text-center w-1/3">
                                 <p className="mb-16">Diterima Oleh Klien,</p>
@@ -290,7 +317,7 @@ export default function RequirementsIndex({ serviceTypes }: any) {
                                 <div className="border-t border-black w-full"></div>
                                 <p className="mt-2 font-bold">( Staf Notaris )</p>
                             </div>
-                        </div>
+                        </div> */}
 
                         {/* FOOTER MODAL UTAMA (Sembunyi) */}
                         <div className="mt-6 pt-6 border-t border-gray-100 dark:border-[#27272a] shrink-0 print:hidden flex gap-4">

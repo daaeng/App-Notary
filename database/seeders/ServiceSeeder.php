@@ -25,7 +25,7 @@ class ServiceSeeder extends Seeder
             'service_type_id' => $ppatId, 'name' => 'Turun Waris', 'default_price' => 8500000,
             'requirements' => json_encode([
                 'uploads' => ['Surat Kematian', 'Surat keterangan waris dari kelurahan/desa', 'Surat Kuasa (Apabila Dikuasakan)', 'Fotokopi identitas pemohon/para ahli waris (KTP/KK) dan kuasa', 'Sertifikat Asli', 'SPPT & PBB Tahun Berjalan'],
-                'inputs' => ['Sharlock Lokasi', 'Nomor Telepon', 'Materai 5 Lembar']
+                'inputs' => ['Sharlock Lokasi', 'Nomor Telepon']
             ]),
             'active_fee_fields' => json_encode(['plotting', 'penataan_batas', 'pnbp', 'tax_deposit', 'validasi_pajak', 'bphtb', 'pph'])
         ]);
@@ -34,7 +34,7 @@ class ServiceSeeder extends Seeder
             'service_type_id' => $ppatId, 'name' => 'Pemisahan', 'default_price' => 0,
             'requirements' => json_encode([
                 'uploads' => ['Surat Kuasa (Apabila Dikuasakan)', 'Fotokopi identitas pemohon/para ahli waris (KTP/KK) dan kuasa', 'Sertifikat Asli', 'Suket tanda batas', 'KTP pemilik tanda batas (utara, timur, barat, selatan)', 'Foto patok tanah (pakai aplikasi geotag)', 'SPPT & PBB Tahun Berjalan'],
-                'inputs' => ['Sharelock Lokasi', 'Materai 5 Lembar']
+                'inputs' => ['Sharelock Lokasi']
             ]),
             'active_fee_fields' => json_encode(['plotting', 'penataan_batas', 'pnbp', 'tax_deposit', 'location_check_fee', 'area_measurement_fee'])
         ]);
@@ -42,8 +42,8 @@ class ServiceSeeder extends Seeder
         DB::table('services')->insert([
             'service_type_id' => $ppatId, 'name' => 'Akta Jual Beli (AJB)', 'default_price' => 3500000,
             'requirements' => json_encode([
-                'uploads' => ['Asli Sertipikat Tanah', 'FC PBB Tahun Berjalan', 'Foto Lokasi Tanah', 'KTP/KK Penjual (Jika menikah lampirkan buku nikah & KTP/KK Pasangan)', 'NPWP Penjual', 'FC KTP & KK Pembeli', 'NPWP Pembeli'],
-                'inputs' => ['Sharlock Lokasi', 'Nomor Telpon Penjual', 'Nomor Telpon Pembeli', 'Materai 20 Lembar (Bisa disediakan sendiri)']
+                'uploads' => ['Asli Sertipikat Tanah', 'FC PBB Tahun Berjalan', 'Foto Lokasi Tanah', 'KTP/KK Penjual & Pembeli (Jika menikah lampirkan buku nikah & KTP/KK Pasangan)', 'NPWP Penjual & Pembeli', 'FC KTP & KK Penjual & Pembeli', 'NPWP Penjual & Pembeli', 'BPJS Penjual & Pembeli', 'Kwitansi Penjualan'],
+                'inputs' => ['Sharlock Lokasi', 'Nomor Telpon Penjual', 'Nomor Telpon Pembeli']
             ]),
             'active_fee_fields' => json_encode(['plotting', 'penataan_batas', 'pnbp', 'tax_deposit', 'validasi_pajak', 'bphtb', 'pph'])
         ]);
@@ -52,7 +52,7 @@ class ServiceSeeder extends Seeder
             'service_type_id' => $ppatId, 'name' => 'Akta Hibah', 'default_price' => 3500000,
             'requirements' => json_encode([
                 'uploads' => ['Asli Sertipikat Tanah', 'FC PBB Tahun Berjalan', 'Foto Lokasi Tanah', 'KTP/KK Pemberi Hibah (Jika menikah lampirkan buku nikah & KTP/KK Pasangan)', 'NPWP Pemberi Hibah', 'FC KTP & KK Penerima Hibah', 'NPWP Penerima Hibah'],
-                'inputs' => ['Sharlock Lokasi', 'Nomor Telpon Pemberi Hibah', 'Nomor Telpon Penerima Hibah', 'Materai 20 Lembar (Bisa disediakan sendiri)']
+                'inputs' => ['Sharlock Lokasi', 'Nomor Telpon Pemberi Hibah', 'Nomor Telpon Penerima Hibah']
             ]),
             'active_fee_fields' => json_encode(['plotting', 'penataan_batas', 'pnbp', 'tax_deposit', 'validasi_pajak', 'bphtb', 'pph'])
         ]);
@@ -61,7 +61,7 @@ class ServiceSeeder extends Seeder
             'service_type_id' => $ppatId, 'name' => 'Akta Pembagian Hak Waris (APHW)', 'default_price' => 8500000,
             'requirements' => json_encode([
                 'uploads' => ['Surat Kematian', 'Surat keterangan waris dari kelurahan/desa', 'Surat Kuasa (Apabila Dikuasakan)', 'Fotokopi identitas pemohon/para ahli waris (KTP/KK) dan kuasa', 'Sertifikat Asli', 'SPPT & PBB Tahun Berjalan'],
-                'inputs' => ['Sharlock Lokasi', 'Nomor Telepon', 'Materai 16 Lembar']
+                'inputs' => ['Sharlock Lokasi', 'Nomor Telepon']
             ]),
             'active_fee_fields' => json_encode(['plotting', 'penataan_batas', 'pnbp', 'tax_deposit', 'validasi_pajak', 'bphtb', 'pph'])
         ]);
@@ -70,7 +70,7 @@ class ServiceSeeder extends Seeder
             'service_type_id' => $ppatId, 'name' => 'Peningkatan Hak', 'default_price' => 0,
             'requirements' => json_encode([
                 'uploads' => ['Sertipikat Asli', 'FC KTP/KK Pemilik Sertipikat', 'Surat Kuasa (Apabila Dikuasakan)', 'IMB di legalisir PTSP', 'SPPT & PBB Tahun Berjalan', 'FC KTP Penerima Kuasa'],
-                'inputs' => ['Materai 5 Lembar']
+                'inputs' => []
             ]),
             'active_fee_fields' => json_encode(['plotting', 'pnbp'])
         ]);
