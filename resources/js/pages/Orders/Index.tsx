@@ -3,6 +3,7 @@ import AppLayout from '@/layouts/app-layout';
 import { Head, Link, router } from '@inertiajs/react';
 import { PageProps } from '@/types';
 import { route } from 'ziggy-js';
+import { BriefcaseBusiness, Calculator } from 'lucide-react';
 
 // --- TIPE DATA ---
 interface Order {
@@ -91,8 +92,14 @@ export default function OrderIndexExecutive({ orders }: Props) {
 
                         {/* Title Section */}
                         <div className="lg:col-span-1 flex flex-col justify-center">
-                            <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Pekerjaan</h1>
-                            <p className="text-slate-500 dark:text-zinc-400 text-sm mt-1">Daftar semua berkas masuk.</p>
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-2xl border border-emerald-500/20 shadow-lg"><BriefcaseBusiness size={28}/></div>
+                                <div>
+                                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Pekerjaan</h1>
+                                    <p className="text-slate-500 dark:text-zinc-400 text-sm mt-1">Daftar semua berkas masuk.</p>
+                                </div>
+                            </div>
+
                             <Link
                                 href={route('orders.create')}
                                 className="mt-4 w-fit px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-indigo-500/20 transition flex items-center gap-2"

@@ -126,6 +126,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('office-settings', [CompanyController::class, 'update'])->name('settings.update');
         Route::delete('/office-settings/logo', [\App\Http\Controllers\CompanyController::class, 'destroyLogo'])->name('settings.logo.delete');
 
+        // PERSYARATAN LAYANAN
+        Route::put('/persyaratan/{service}', [RequirementController::class, 'update'])->name('requirements.update');
+
      });
 
 

@@ -199,7 +199,7 @@ export default function ClientIndex({ auth, clients }: Props) {
                                 {filteredClients.length === 0 ? (
                                     <tr>
                                         <td colSpan={4} className="px-8 py-20 text-center">
-                                            <div className="flex flex-col items-center justify-center text-slate-400 animate-pulse">
+                                            <div className="flex flex-col items-center justify-center text-slate-500 animate-pulse">
                                                 <span className="text-6xl mb-4">📂</span>
                                                 <p className="text-lg font-bold text-slate-900 dark:text-white">Data Tidak Ditemukan</p>
                                                 <p className="text-sm font-medium">Pastikan kata kunci pencarian sudah benar.</p>

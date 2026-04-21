@@ -32,7 +32,7 @@ export default function DashboardOperations({ auth, stats, recentOrders, upcomin
             <Head title="Operations Center" />
 
             <div className="min-h-screen bg-gray-50 dark:bg-black font-sans transition-colors duration-300 p-4 lg:p-8">
-                <div className="w-full max-w-[1800px] mx-auto">
+                <div className="w-full mx-auto space-y-8">
 
                     {/* HEADER */}
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
@@ -46,7 +46,10 @@ export default function DashboardOperations({ auth, stats, recentOrders, upcomin
                         </div>
                         <div className="flex gap-3">
                             <Link href={route('schedules.index')} className="px-4 py-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 rounded-lg text-sm font-bold shadow-sm hover:bg-gray-50 dark:hover:bg-zinc-800 transition">
-                                📅 Kalender
+                                <p className="text-slate-500 dark:text-slate-400 font-medium">
+                                    📅
+                                    {new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                                </p>
                             </Link>
                             <Link href={route('orders.create')} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-bold shadow-md shadow-indigo-500/20 transition flex items-center gap-2">
                                 + Order Baru

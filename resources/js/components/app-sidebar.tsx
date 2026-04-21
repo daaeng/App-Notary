@@ -53,13 +53,13 @@ export function AppSidebar() {
                     title: 'Syarat & Ketentuan',
                     url: route('requirements.index'),
                     icon: ListChecks,
-                    show: ['super_admin', 'staff', 'bos'].includes(userRole)
+                    show: ['super_admin', 'staff', 'notaris'].includes(userRole)
                 },
                 {
                     title: 'Order Masuk',
                     url: route('orders.index'),
                     icon: FileText,
-                    show: ['super_admin', 'staff', 'bos'].includes(userRole)
+                    show: ['super_admin', 'staff', 'notaris'].includes(userRole)
                 },
                 // --- [BARU] MENU SIMULASI BIAYA ---
                 {
@@ -67,7 +67,7 @@ export function AppSidebar() {
                     url: route('simulasi.index'),
                     icon: Calculator,
                     // Bisa diakses oleh admin, staf front office, notaris, dan bos
-                    show: ['super_admin', 'staff', 'bos'].includes(userRole)
+                    show: ['super_admin', 'staff', 'notaris'].includes(userRole)
                 },
                 {
                     title: 'Data Klien',
@@ -85,7 +85,7 @@ export function AppSidebar() {
                     title: 'Buku Register',
                     url: route('registers.index'),
                     icon: BookOpen,
-                    show: ['super_admin', 'staff', 'bos'].includes(userRole)
+                    show: ['super_admin', 'staff', 'notaris'].includes(userRole)
                 },
             ]
         },
@@ -96,13 +96,13 @@ export function AppSidebar() {
                     title: 'Laporan & Invoice',
                     url: route('reports.index'),
                     icon: BarChart3,
-                    show: ['super_admin', 'bos'].includes(userRole)
+                    show: ['super_admin', 'notaris'].includes(userRole)
                 },
                 {
                     title: 'Pengeluaran',
                     url: route('expenses.index'),
                     icon: Wallet,
-                    show: ['super_admin', 'notaris', 'bos'].includes(userRole)
+                    show: ['super_admin', 'notaris'].includes(userRole)
                 },
             ]
         },
@@ -119,13 +119,14 @@ export function AppSidebar() {
                     title: 'Pengaturan Kantor',
                     url: route('settings.edit'),
                     icon: Settings,
-                    show: ['super_admin', 'bos'].includes(userRole)
+                    show: ['super_admin', 'notaris'].includes(userRole)
                 },
                 {
                     title: 'Log Aktivitas',
                     url: route('activity-logs.index'),
                     icon: Activity,
-                    show: userRole === 'super_admin'
+                    show: ['super_admin', 'notaris'].includes(userRole)
+                    // show: userRole === 'super_admin'
                 },
             ]
         }
