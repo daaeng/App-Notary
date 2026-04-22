@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { Head, usePage, useForm } from '@inertiajs/react';
-import { FileText, Search, BookOpenCheck, CheckCircle2, Info, ArrowRight, X, MousePointerClick, Printer, Edit, Trash2, PlusCircle, Save, Calculator } from 'lucide-react';
+// Tambahkan icon Send untuk tombol WhatsApp
+import { FileText, Search, BookOpenCheck, CheckCircle2, Info, ArrowRight, X, MousePointerClick, Printer, Edit, Trash2, PlusCircle, Save, Calculator, Send } from 'lucide-react';
 
 export default function RequirementsIndex({ serviceTypes = [] }: any) {
     const { auth } = usePage<any>().props;
@@ -88,6 +89,40 @@ export default function RequirementsIndex({ serviceTypes = [] }: any) {
         });
     };
 
+    // --- FUNGSI GENERATE PESAN WHATSAPP ---
+    const sendToWhatsApp = () => {
+        if (!selectedService) return;
+
+        const reqs = getReqs(selectedService.requirements);
+
+        // Merakit teks dengan format tebal (*) khusus untuk WhatsApp
+        let waText = `*PERSYARATAN BERKAS LAYANAN*\n*KANTOR NOTARIS & PPAT*\n-----------------------------------\n\n*LAYANAN:* ${selectedService.name}\n\n`;
+
+        if (reqs.uploads && reqs.uploads.length > 0) {
+            waText += `*DOKUMEN FISIK / SCAN:*\n`;
+            reqs.uploads.forEach((req: string, i: number) => {
+                waText += `${i + 1}. ${req}\n`;
+            });
+            waText += `\n`;
+        }
+
+        if (reqs.inputs && reqs.inputs.length > 0) {
+            waText += `*INFO TAMBAHAN:*\n`;
+            reqs.inputs.forEach((req: string) => {
+                waText += `- ${req}\n`;
+            });
+            waText += `\n`;
+        }
+
+        waText += `_Pesan ini dikirim otomatis dari sistem NotarisApp._`;
+
+        // Encode agar spasi dan enter terbaca dengan baik di URL
+        const encodedText = encodeURIComponent(waText);
+
+        // Buka API WhatsApp
+        window.open(`https://api.whatsapp.com/send?text=${encodedText}`, '_blank');
+    };
+
     // Class dinamis untuk input mode edit
     const editInputClasses = "flex-1 bg-white dark:bg-[#09090b] border border-gray-300 dark:border-[#27272a] text-slate-900 dark:text-slate-200 text-sm rounded-xl focus:ring-indigo-500 focus:border-indigo-500 block p-3 transition-all outline-none";
 
@@ -95,33 +130,28 @@ export default function RequirementsIndex({ serviceTypes = [] }: any) {
         <AppLayout breadcrumbs={[{ title: 'Kamus Persyaratan', href: '/persyaratan' }]}>
             <Head title="Kamus Persyaratan Layanan" />
 
-            {/* CSS KHUSUS PRINT: SAPU JAGAT (MEMAKSA PUTIH BERSIH 100%) */}
+            {/* CSS KHUSUS PRINT: SAPU JAGAT */}
             <style>{`
                 @media print {
                     @page { size: A4 portrait; margin: 1cm; }
 
-                    /* 1. MATIKAN COLOR SCHEME DARK BAWAAN BROWSER */
                     :root, html, body {
                         color-scheme: light !important;
                         background-color: #ffffff !important;
                     }
 
-                    /* 2. SEMBUNYIKAN SEMUA ELEMEN DI LAYAR */
                     body * { visibility: hidden !important; }
 
-                    /* 3. TAMPILKAN HANYA MODAL BESERTA ISINYA */
                     #printable-modal, #printable-modal * {
                         visibility: visible !important;
                     }
 
-                    /* 4. PAKSA MODAL MENJADI PUTIH BERSIH (MENCEGAH KOTAK HITAM) */
                     #printable-modal {
                         position: absolute !important; left: 0 !important; top: 0 !important;
                         width: 100% !important; margin: 0 !important; padding: 0 !important;
                         background-color: #ffffff !important;
                     }
 
-                    /* 5. PAKSA WRAPPER KONTEN MENJADI PUTIH */
                     #printable-content-wrapper {
                         position: absolute !important; left: 0 !important; top: 0 !important;
                         width: 100% !important; border: none !important; border-radius: 0 !important;
@@ -129,13 +159,11 @@ export default function RequirementsIndex({ serviceTypes = [] }: any) {
                         box-shadow: none !important;
                     }
 
-                    /* 6. SAPU JAGAT: MENGHANCURKAN SEMUA KELAS DARK MODE TAILWIND */
                     #printable-content-wrapper * {
                         background-color: transparent !important;
                         color: #000000 !important;
                     }
 
-                    /* 7. KEMBALIKAN WARNA BORDER KE HITAM */
                     #printable-content-wrapper .border,
                     #printable-content-wrapper .border-t,
                     #printable-content-wrapper .border-t-2,
@@ -147,7 +175,6 @@ export default function RequirementsIndex({ serviceTypes = [] }: any) {
                         border-color: #000000 !important;
                     }
 
-                    /* 8. PENGECUALIAN TABEL (AGAR HEADER TETAP ABU-ABU) */
                     table { border-collapse: collapse !important; width: 100% !important; border: 1px solid black !important; }
                     th, td { border: 1px solid black !important; padding: 8px !important; color: #000000 !important; }
                     th {
@@ -163,7 +190,6 @@ export default function RequirementsIndex({ serviceTypes = [] }: any) {
                 }
             `}</style>
 
-            {/* TEMA UI DEFAULT (DINAMIS GRAY/WHITE/DARK) */}
             <div className="min-h-screen bg-gray-50 dark:bg-[#09090b] font-sans transition-colors duration-300 p-4 lg:p-8 print:hidden">
                 <div className="w-full mx-auto space-y-8 max-w-[1400px]">
 
@@ -212,17 +238,18 @@ export default function RequirementsIndex({ serviceTypes = [] }: any) {
                     {/* WRAPPER MODAL */}
                     <div id="printable-content-wrapper" className="bg-white dark:bg-[#121214] border border-gray-200 dark:border-[#27272a] rounded-[2.5rem] shadow-2xl max-w-3xl w-full p-8 max-h-[90vh] flex flex-col relative animate-fade-in-up print:!bg-white print:dark:!bg-white print:!shadow-none print:!border-none print:!rounded-none print:!p-0 print:!max-h-none print:!h-auto">
 
-                        {/* TOMBOL AKSI */}
+                        {/* TOMBOL AKSI (ATAS KANAN) */}
                         <div className="absolute top-6 right-6 flex gap-2 print:hidden">
                             {isSuperAdmin && !isEditing && (
                                 <button onClick={() => setIsEditing(true)} className="p-2.5 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 rounded-full transition-colors shadow-sm" title="Edit Persyaratan"><Edit size={20} /></button>
                             )}
+                            <button onClick={sendToWhatsApp} className="p-2.5 bg-green-500/10 text-green-600 dark:text-green-400 hover:bg-green-500/20 rounded-full transition-colors shadow-sm" title="Kirim ke WhatsApp"><Send size={20} /></button>
                             <button onClick={() => window.print()} className="p-2.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20 rounded-full transition-colors shadow-sm" title="Cetak Persyaratan"><Printer size={20} /></button>
                             <button onClick={closeModal} className="p-2.5 bg-gray-100 dark:bg-[#27272a] text-slate-500 hover:text-red-500 rounded-full transition-colors shadow-sm" title="Tutup Modal"><X size={20} /></button>
                         </div>
 
                         {/* HEADER MODAL */}
-                        <div className="mb-6 pr-32 print:pr-0 border-b border-gray-200 dark:border-[#27272a] print:!border-black print:!border-b-2 pb-4 shrink-0 print-formal-text">
+                        <div className="mb-6 pr-44 print:pr-0 border-b border-gray-200 dark:border-[#27272a] print:!border-black print:!border-b-2 pb-4 shrink-0 print-formal-text">
                             <div className="hidden print:block mb-4 text-center border-b-2 border-black pb-4"><h1 className="text-lg font-black uppercase tracking-widest text-black">PERSYARATAN BERKAS LAYANAN</h1><p className="text-xs font-bold text-black mt-1 uppercase">Kantor Notaris & PPAT</p></div>
                             <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 mb-3 inline-block print:hidden">{isEditing ? 'Mode Edit Data' : 'Detail SOP'}</span>
                             <h2 className="text-2xl font-black text-slate-900 dark:text-white print:!text-black leading-tight uppercase">LAYANAN: {selectedService.name}</h2>
@@ -337,7 +364,8 @@ export default function RequirementsIndex({ serviceTypes = [] }: any) {
                                 </>
                             ) : (
                                 <>
-                                    <button onClick={() => window.print()} className="flex-1 py-4 bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-bold rounded-xl text-xs uppercase tracking-widest transition-all flex justify-center items-center gap-2"><Printer size={16}/> Cetak Persyaratan</button>
+                                    <button onClick={sendToWhatsApp} className="flex-1 py-4 bg-green-50 dark:bg-green-500/10 hover:bg-green-100 dark:hover:bg-green-500/20 text-green-600 dark:text-green-400 font-bold rounded-xl text-xs uppercase tracking-widest transition-all flex justify-center items-center gap-2"><Send size={16}/> Kirim ke WA</button>
+                                    <button onClick={() => window.print()} className="flex-1 py-4 bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-bold rounded-xl text-xs uppercase tracking-widest transition-all flex justify-center items-center gap-2"><Printer size={16}/> Cetak</button>
                                     <button onClick={closeModal} className="flex-1 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(79,70,229,0.3)]">Tutup</button>
                                 </>
                             )}
