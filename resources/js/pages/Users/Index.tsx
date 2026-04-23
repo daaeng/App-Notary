@@ -93,7 +93,7 @@ export default function UserIndex({ users, roles, auth }: Props) {
             <Head title="Manajemen Tim" />
 
             <div className="min-h-screen bg-gray-50 dark:bg-black font-sans transition-colors duration-300 p-4 lg:p-8">
-                <div className="max-w-7xl mx-auto">
+                <div className="w-full mx-auto space-y-8">
 
                     {/* HEADER */}
                     <div className="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">

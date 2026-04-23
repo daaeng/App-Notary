@@ -191,7 +191,7 @@ export default function RequirementsIndex({ serviceTypes = [] }: any) {
             `}</style>
 
             <div className="min-h-screen bg-gray-50 dark:bg-[#09090b] font-sans transition-colors duration-300 p-4 lg:p-8 print:hidden">
-                <div className="w-full mx-auto space-y-8 max-w-[1400px]">
+                <div className="w-full mx-auto space-y-8">
 
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
                         <div className="flex items-center gap-4">

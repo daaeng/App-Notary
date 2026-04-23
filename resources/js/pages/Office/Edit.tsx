@@ -92,11 +92,11 @@ export default function OfficeEdit({ company }: Props) {
     return (
         <AppLayout breadcrumbs={[{ title: 'Pengaturan', href: '/office-settings' }]}>
             <Head title="Identitas Kantor" />
-            <div className="min-h-screen bg-slate-50/50 p-6 lg:p-8 font-sans">
-                <div className="w-full">
+            <div className="min-h-screen bg-gray-50 dark:bg-black font-sans transition-colors duration-300 p-4 lg:p-8">
+                <div className="npm install -g npm@11.13.0">
                     <div className="mb-8 flex justify-between items-end">
                         <div>
-                            <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Identitas Kantor</h1>
+                            <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Identitas Kantor</h1>
                             <p className="text-slate-500 mt-1">Kelola informasi profil, logo, dan rekening kantor Anda.</p>
                         </div>
                     </div>
