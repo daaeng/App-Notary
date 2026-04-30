@@ -2,7 +2,7 @@ import { useState, useEffect, FormEventHandler, useRef } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { Head, useForm, Link } from '@inertiajs/react';
 import { route } from 'ziggy-js';
-import { Upload, FileText, CheckCircle2, Calculator, ShieldCheck, Info, AlertCircle, MapPin, Wallet, ArrowLeft, X } from 'lucide-react';
+import { Upload, FileText, CheckCircle2, Calculator, ShieldCheck, Info, MapPin, ArrowLeft, X, Trash2, PlusCircle } from 'lucide-react';
 
 interface Props { clients: any[]; serviceTypes: any[]; company: any; }
 
@@ -10,6 +10,10 @@ export default function OrderCreate({ clients, serviceTypes, company }: Props) {
     const [selectedService, setSelectedService] = useState<any>(null);
     const [uploadedFiles, setUploadedFiles] = useState<Record<string, File | null>>({});
     const isFirstRun = useRef(true);
+
+    // --- STATE UNTUK DOKUMEN TAMBAHAN ---
+    const [customDocName, setCustomDocName] = useState('');
+    const [customDocFile, setCustomDocFile] = useState<File | null>(null);
 
     const { data, setData, post, processing, errors } = useForm({
         client_id: '', service_id: '', description: '', seller_name: '', land_area: '', transaction_value: '', njop: '',
@@ -21,7 +25,7 @@ export default function OrderCreate({ clients, serviceTypes, company }: Props) {
         const found = serviceTypes.flatMap((t: any) => t.services).find((s: any) => s.id === Number(data.service_id));
         if (found) {
             setSelectedService(found); setData('service_price', found.default_price);
-            setUploadedFiles({}); setData('completed_requirements', []);
+            setData('completed_requirements', []); setData('files', {});
         } else {
             setSelectedService(null); setData('service_price', 0);
         }
@@ -33,19 +37,14 @@ export default function OrderCreate({ clients, serviceTypes, company }: Props) {
         const transVal = Number(data.transaction_value) || 0;
         const njopVal = Number(data.njop) || 0;
 
-        // Cek Nilai Tertinggi (N)
         const N = Math.max(transVal, njopVal);
-
-        // Rumus PPh 2.5%
         const calculatedPph = N > 0 ? N * 0.025 : 0;
 
-        // Tentukan NPOPTKP berdasarkan jenis layanan
         let currentNpoptkp = 0;
         const sName = selectedService?.name?.toLowerCase() || '';
         if (sName.includes('waris') || sName.includes('aphw')) { currentNpoptkp = 300000000; }
         else if (sName.includes('jual beli') || sName.includes('ajb') || sName.includes('hibah')) { currentNpoptkp = 80000000; }
 
-        // Rumus BPHTB 5%
         const calculatedBphtb = N > currentNpoptkp ? (N - currentNpoptkp) * 0.05 : 0;
 
         setData(prev => ({ ...prev, pph_fee: calculatedPph, bphtb_fee: calculatedBphtb }));
@@ -54,7 +53,6 @@ export default function OrderCreate({ clients, serviceTypes, company }: Props) {
     const selectedCategory = serviceTypes.find((t: any) => t.services.some((s: any) => s.id === Number(data.service_id)));
     const isPPAT = selectedCategory?.slug === 'ppat' || selectedCategory?.name?.toLowerCase() === 'ppat';
 
-    // Variabel untuk Transparansi Rumus Pajak
     const transValDisplay = Number(data.transaction_value) || 0;
     const njopValDisplay = Number(data.njop) || 0;
     const nilaiTertinggi = Math.max(transValDisplay, njopValDisplay);
@@ -77,13 +75,41 @@ export default function OrderCreate({ clients, serviceTypes, company }: Props) {
     };
 
     const handleFileChange = (reqName: string, file: File | null) => {
-        const newFiles = { ...uploadedFiles, [reqName]: file };
-        setUploadedFiles(newFiles); setData('files', newFiles);
+        const newFiles = { ...data.files };
+        if (file) newFiles[reqName] = file;
+        else delete newFiles[reqName];
+
+        setData('files', newFiles);
         if (file && !data.completed_requirements.includes(reqName)) toggleRequirement(reqName);
     };
 
+    // --- FUNGSI TAMPUNG DOKUMEN TAMBAHAN SEMENTARA ---
+    const addCustomDoc = () => {
+        if (!customDocName || !customDocFile) return;
+        const safeName = customDocName.trim();
+        const newFiles = { ...data.files, [safeName]: customDocFile };
+        setData('files', newFiles);
+
+        setCustomDocName('');
+        setCustomDocFile(null);
+
+        const fileInput = document.getElementById('customFile') as HTMLInputElement;
+        if (fileInput) fileInput.value = '';
+    };
+
+    const removeCustomDoc = (name: string) => {
+        const newFiles = { ...data.files };
+        delete newFiles[name];
+        setData('files', newFiles);
+    };
+
     const handleInfoChange = (key: string, value: string) => { setData('additional_info', { ...data.additional_info, [key]: value }); };
-    const submit: FormEventHandler = (e) => { e.preventDefault(); post(route('orders.store'), { forceFormData: true }); };
+
+    // Submit form (Menggunakan post dari useForm sudah otomatis handle FormData)
+    const submit: FormEventHandler = (e) => {
+        e.preventDefault();
+        post(route('orders.store'), { forceFormData: true });
+    };
 
     const getReqs = () => {
         if (!selectedService?.requirements) return { uploads: [], inputs: [] };
@@ -93,6 +119,9 @@ export default function OrderCreate({ clients, serviceTypes, company }: Props) {
         if (!selectedService?.active_fee_fields) return [];
         return typeof selectedService.active_fee_fields === 'string' ? JSON.parse(selectedService.active_fee_fields) : selectedService.active_fee_fields;
     };
+
+    const requiredUploads = getReqs().uploads || [];
+    const customUploadKeys = Object.keys(data.files).filter(k => !requiredUploads.includes(k));
 
     const inputClasses = "w-full bg-[#09090b] border border-[#27272a] text-slate-200 text-sm rounded-xl focus:ring-indigo-500 focus:border-indigo-500 block p-3.5 transition-all outline-none shadow-inner";
     const labelClasses = "block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1";
@@ -122,9 +151,11 @@ export default function OrderCreate({ clients, serviceTypes, company }: Props) {
                             {getReqs().uploads.length > 0 && (
                                 <div className={`${cardClass} animate-fade-in`}>
                                     <h3 className={sectionTitle}><Upload className="text-indigo-500" size={24}/> 02. Checklist Dokumen Fisik</h3>
+
+                                    {/* DOKUMEN WAJIB SESUAI SOP */}
                                     <div className="grid grid-cols-1 gap-3">
                                         {getReqs().uploads.map((req: string, i: number) => {
-                                            const isChecked = data.completed_requirements.includes(req) || !!uploadedFiles[req];
+                                            const isChecked = data.completed_requirements.includes(req) || !!data.files[req];
                                             return (
                                             <div key={i} className={`flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-xl border transition-all ${isChecked ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-[#27272a] bg-[#09090b]'}`}>
                                                 <div className="flex items-center gap-4 w-full pr-4">
@@ -138,6 +169,47 @@ export default function OrderCreate({ clients, serviceTypes, company }: Props) {
                                                 </div>
                                             </div>
                                         )})}
+                                    </div>
+
+                                    {/* DOKUMEN TAMBAHAN (OPSIONAL) */}
+                                    <div className="mt-8 pt-6 border-t border-[#27272a]">
+                                        <p className="text-[10px] font-bold text-slate-500 mb-4 tracking-widest uppercase">Dokumen Tambahan / Lainnya (Opsional):</p>
+
+                                        {customUploadKeys.length > 0 && (
+                                            <div className="space-y-3 mb-5">
+                                                {customUploadKeys.map(key => (
+                                                    <div key={key} className="flex justify-between items-center p-4 bg-[#18181b] rounded-xl border border-indigo-500/30">
+                                                        <div className="flex items-center gap-4">
+                                                            <CheckCircle2 size={18} className="text-indigo-500 shrink-0"/>
+                                                            <div>
+                                                                <p className="text-[11px] font-bold text-indigo-400 uppercase tracking-wider leading-snug">{key}</p>
+                                                                <p className="text-[10px] text-slate-500 mt-0.5 truncate max-w-[200px] md:max-w-xs">{data.files[key]?.name}</p>
+                                                            </div>
+                                                        </div>
+                                                        <button type="button" onClick={() => removeCustomDoc(key)} className="p-2.5 text-red-500 hover:text-white bg-red-500/10 hover:bg-red-500 rounded-lg transition-all"><Trash2 size={16}/></button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        <div className="flex flex-col md:flex-row gap-3 items-end">
+                                            <div className="w-full md:w-2/5">
+                                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Nama Dokumen</label>
+                                                <input type="text" value={customDocName} onChange={e => setCustomDocName(e.target.value)} placeholder="Cth: KTP Pasangan..." className={inputClasses} />
+                                            </div>
+                                            <div className="w-full md:w-2/5">
+                                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Pilih File</label>
+                                                <input type="file" id="customFile" className="hidden" onChange={e => setCustomDocFile(e.target.files ? e.target.files[0] : null)} />
+                                                <label htmlFor="customFile" className="flex items-center justify-between px-4 py-[14px] bg-[#09090b] border border-[#27272a] text-slate-300 rounded-xl hover:bg-[#18181b] transition-all cursor-pointer text-xs">
+                                                    <span className="truncate max-w-[150px]">{customDocFile ? customDocFile.name : 'Belum ada file...'}</span>
+                                                    <Upload size={14} className="text-slate-500 shrink-0"/>
+                                                </label>
+                                            </div>
+                                            <button type="button" onClick={addCustomDoc} disabled={!customDocName || !customDocFile} className="w-full md:w-1/5 py-[14px] bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-indigo-500 text-white font-bold rounded-xl text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(79,70,229,0.2)]">
+                                                <PlusCircle size={16}/> Tambah
+                                            </button>
+                                        </div>
+                                        <p className="text-[10px] text-slate-500 italic mt-3">*Dokumen tambahan akan terunggah otomatis saat Anda mengklik tombol "Simpan & Daftarkan Order".</p>
                                     </div>
                                 </div>
                             )}

@@ -11,10 +11,14 @@ export default function OrderEdit({ auth, order, clients, serviceTypes, company 
     const [selectedService, setSelectedService] = useState<any>(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
-    const [uploadedFiles, setUploadedFiles] = useState<Record<string, File | null>>({});
     const isFirstRun = useRef(true);
 
-    const { data, setData, put, processing, errors } = useForm({
+    // --- STATE UNTUK UPLOAD DOKUMEN TAMBAHAN LANGSUNG ---
+    const [customDocName, setCustomDocName] = useState('');
+    const [customDocFile, setCustomDocFile] = useState<File | null>(null);
+    const [isUploadingDoc, setIsUploadingDoc] = useState(false);
+
+    const { data, setData, processing, errors } = useForm({
         client_id: order.client_id || '', service_id: order.service_id || '', description: order.description || '', akta_date: order.akta_date || '', status: order.status,
         seller_name: order.ppat_detail?.seller_name || '', land_area: order.ppat_detail?.land_area || '', transaction_value: order.ppat_detail?.transaction_value || '', njop: order.ppat_detail?.njop || '',
         service_price: order.service_price || 0, plotting_fee: order.plotting_fee || 0, pnbp_fee: order.pnbp_fee || 0, validation_fee: order.validation_fee || 0, bphtb_fee: order.bphtb_fee || 0, pph_fee: order.pph_fee || 0, measurement_fee: order.measurement_fee || 0, location_check_fee: order.location_check_fee || 0, area_measurement_fee: order.area_measurement_fee || 0, tax_deposit: order.tax_deposit || 0,
@@ -77,9 +81,53 @@ export default function OrderEdit({ auth, order, clients, serviceTypes, company 
 
     const getFileUrl = (path: string) => `/storage/${path}`;
     const toggleRequirement = (reqName: string) => { const current = data.completed_requirements || []; if (current.includes(reqName)) setData('completed_requirements', current.filter(item => item !== reqName)); else setData('completed_requirements', [...current, reqName]); };
-    const handleFileChange = (reqName: string, file: File | null) => { const newFiles = { ...uploadedFiles, [reqName]: file }; setUploadedFiles(newFiles); setData('files', newFiles); if (file && !data.completed_requirements.includes(reqName)) toggleRequirement(reqName); };
+
+    // Simpan file SOP standar ke state
+    const handleFileChange = (reqName: string, file: File | null) => {
+        const newFiles = { ...data.files };
+        if (file) newFiles[reqName] = file;
+        else delete newFiles[reqName];
+
+        setData('files', newFiles);
+        if (file && !data.completed_requirements.includes(reqName)) toggleRequirement(reqName);
+    };
+
+    // --- FUNGSI UPLOAD DOKUMEN TAMBAHAN LANGSUNG (AJAX) ---
+    const addCustomDoc = () => {
+        if (!customDocName || !customDocFile) return;
+        setIsUploadingDoc(true);
+
+        // Memanfaatkan route upload file terpisah agar langsung masuk database!
+        router.post(route('orders.upload', order.id), {
+            file: customDocFile,
+            file_name: customDocFile.name,
+            category: customDocName.trim()
+        }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setCustomDocName('');
+                setCustomDocFile(null);
+                const fileInput = document.getElementById('customFile') as HTMLInputElement;
+                if (fileInput) fileInput.value = '';
+            },
+            onFinish: () => setIsUploadingDoc(false)
+        });
+    };
+
     const handleInfoChange = (key: string, value: string) => { setData('additional_info', { ...data.additional_info, [key]: value }); };
-    const submitUpdate: FormEventHandler = (e) => { e.preventDefault(); router.post(route('orders.update', order.id), { _method: 'PUT', ...data, forceFormData: true }); };
+
+    // Perbaikan bug pengiriman data form (Opsi FormData dipisah dengan benar)
+    const submitUpdate: FormEventHandler = (e) => {
+        e.preventDefault();
+        router.post(route('orders.update', order.id), {
+            _method: 'PUT',
+            ...data
+        }, {
+            forceFormData: true,
+            preserveScroll: true
+        });
+    };
+
     const deleteFile = (fileId: number) => { if(confirm('Hapus file permanen?')) router.delete(route('orders.deleteFile', fileId)); };
     const confirmDeleteOrder = () => { setShowDeleteModal(false); router.delete(route('orders.destroy', order.id)); };
 
@@ -124,43 +172,73 @@ export default function OrderEdit({ auth, order, clients, serviceTypes, company 
                                 </div>
                             </div>
 
-                            {(getReqs().uploads.length > 0 || order.files?.length > 0) && (
-                                <div className={cardClass}>
-                                    <h3 className={sectionTitle}><Upload className="text-indigo-400" size={24}/> Progress Berkas & Dokumen</h3>
-                                    {order.files?.length > 0 && (
-                                        <div className="mb-8">
-                                            <p className="text-[10px] font-bold text-slate-500 mb-3 tracking-widest uppercase">Arsip Tersimpan:</p>
-                                            <div className="space-y-3">
-                                                {order.files.map((file: any) => (
-                                                    <div key={file.id} className="flex justify-between items-center p-4 bg-[#09090b] rounded-xl border border-[#27272a]">
-                                                        <div className="flex items-center gap-4"><CheckCircle2 size={20} className="text-emerald-500"/><div><p className="text-sm font-bold text-white">{file.file_name}</p><p className="text-[10px] text-slate-500 uppercase tracking-widest mt-0.5">{file.category}</p></div></div>
-                                                        <div className="flex items-center gap-2"><a href={getFileUrl(file.file_path)} target="_blank" className="p-2.5 text-slate-400 hover:text-white bg-[#18181b] rounded-lg border border-[#27272a] transition"><Download size={16}/></a><button type="button" onClick={() => deleteFile(file.id)} className="p-2.5 text-red-500 hover:text-white hover:bg-red-600 bg-[#18181b] rounded-lg border border-[#27272a] transition"><Trash2 size={16}/></button></div>
-                                                    </div>
-                                                ))}
-                                            </div>
+                            <div className={cardClass}>
+                                <h3 className={sectionTitle}><Upload className="text-indigo-400" size={24}/> Progress Berkas & Dokumen</h3>
+
+                                {/* ARSIP YANG SUDAH TERUPLOAD DI DATABASE */}
+                                {order.files?.length > 0 && (
+                                    <div className="mb-8">
+                                        <p className="text-[10px] font-bold text-slate-500 mb-3 tracking-widest uppercase">Arsip Tersimpan:</p>
+                                        <div className="space-y-3">
+                                            {order.files.map((file: any) => (
+                                                <div key={file.id} className="flex justify-between items-center p-4 bg-[#09090b] rounded-xl border border-emerald-500/30">
+                                                    <div className="flex items-center gap-4"><CheckCircle2 size={20} className="text-emerald-500 shrink-0"/><div><p className="text-sm font-bold text-white truncate max-w-[200px] md:max-w-xs">{file.file_name}</p><p className="text-[10px] text-emerald-500 uppercase tracking-widest mt-0.5">{file.category}</p></div></div>
+                                                    <div className="flex items-center gap-2"><a href={getFileUrl(file.file_path)} target="_blank" className="p-2.5 text-slate-400 hover:text-white bg-[#18181b] rounded-lg border border-[#27272a] transition"><Download size={16}/></a><button type="button" onClick={() => deleteFile(file.id)} className="p-2.5 text-red-500 hover:text-white hover:bg-red-600 bg-[#18181b] rounded-lg border border-[#27272a] transition"><Trash2 size={16}/></button></div>
+                                                </div>
+                                            ))}
                                         </div>
-                                    )}
-                                    <p className="text-[10px] font-bold text-slate-500 mb-3 tracking-widest uppercase">Checklist Persyaratan:</p>
-                                    <div className="grid grid-cols-1 gap-3">
-                                        {getReqs().uploads.map((req: string, i: number) => {
-                                            const isUploadedInDB = order.files?.some((f: any) => f.category === req);
-                                            const isChecked = data.completed_requirements.includes(req) || isUploadedInDB || !!uploadedFiles[req];
-                                            return (
-                                            <div key={i} className={`flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-xl border transition-all ${isChecked ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-[#27272a] bg-[#09090b]'}`}>
-                                                <div className="flex items-center gap-4 w-full pr-4">
-                                                    <input type="checkbox" checked={isChecked} onChange={() => toggleRequirement(req)} disabled={isUploadedInDB} className="w-5 h-5 rounded border-[#27272a] bg-[#18181b] text-emerald-500 focus:ring-emerald-500 cursor-pointer shrink-0" />
-                                                    <div className={`p-2.5 rounded-xl shrink-0 ${isChecked ? 'bg-emerald-500/20 text-emerald-400' : 'bg-[#18181b] text-slate-600'}`}>{isChecked ? <CheckCircle2 size={16} /> : <FileText size={16} />}</div>
-                                                    <span className={`text-[11px] font-bold uppercase tracking-wider leading-snug ${isChecked ? 'text-emerald-500' : 'text-slate-300'}`}>{req}</span>
-                                                </div>
-                                                <div className="flex items-center gap-3 shrink-0 pl-14 md:pl-0">
-                                                    {isChecked ? (<span className="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5"><CheckCircle2 size={14}/> Ada</span>) : (<span className="px-3 py-1.5 rounded-lg bg-red-500/10 text-red-500 border border-red-500/20 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5"><X size={14}/> Belum</span>)}
-                                                    {!isUploadedInDB && (<label className="cursor-pointer px-4 py-2 bg-[#18181b] border border-[#27272a] text-slate-300 rounded-lg hover:bg-indigo-600 hover:text-white hover:border-indigo-500 transition-all active:scale-95 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2"><Upload size={14} /> Upload <input type="file" className="hidden" onChange={e => handleFileChange(req, e.target.files![0])} /></label>)}
-                                                </div>
-                                            </div>
-                                        )})}
                                     </div>
+                                )}
+
+                                {/* DOKUMEN WAJIB SESUAI SOP */}
+                                {getReqs().uploads.length > 0 && (
+                                    <>
+                                        <p className="text-[10px] font-bold text-slate-500 mb-3 tracking-widest uppercase">Checklist Persyaratan:</p>
+                                        <div className="grid grid-cols-1 gap-3">
+                                            {getReqs().uploads.map((req: string, i: number) => {
+                                                const isUploadedInDB = order.files?.some((f: any) => f.category === req);
+                                                const isChecked = data.completed_requirements.includes(req) || isUploadedInDB || !!data.files[req];
+                                                return (
+                                                <div key={i} className={`flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-xl border transition-all ${isChecked ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-[#27272a] bg-[#09090b]'}`}>
+                                                    <div className="flex items-center gap-4 w-full pr-4">
+                                                        <input type="checkbox" checked={isChecked} onChange={() => toggleRequirement(req)} disabled={isUploadedInDB} className="w-5 h-5 rounded border-[#27272a] bg-[#18181b] text-emerald-500 focus:ring-emerald-500 cursor-pointer shrink-0" />
+                                                        <div className={`p-2.5 rounded-xl shrink-0 ${isChecked ? 'bg-emerald-500/20 text-emerald-400' : 'bg-[#18181b] text-slate-600'}`}>{isChecked ? <CheckCircle2 size={16} /> : <FileText size={16} />}</div>
+                                                        <span className={`text-[11px] font-bold uppercase tracking-wider leading-snug ${isChecked ? 'text-emerald-500' : 'text-slate-300'}`}>{req}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-3 shrink-0 pl-14 md:pl-0">
+                                                        {isChecked ? (<span className="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5"><CheckCircle2 size={14}/> Ada</span>) : (<span className="px-3 py-1.5 rounded-lg bg-red-500/10 text-red-500 border border-red-500/20 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5"><X size={14}/> Belum</span>)}
+                                                        {!isUploadedInDB && (<label className="cursor-pointer px-4 py-2 bg-[#18181b] border border-[#27272a] text-slate-300 rounded-lg hover:bg-indigo-600 hover:text-white hover:border-indigo-500 transition-all active:scale-95 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2"><Upload size={14} /> Upload <input type="file" className="hidden" onChange={e => handleFileChange(req, e.target.files![0])} /></label>)}
+                                                    </div>
+                                                </div>
+                                            )})}
+                                        </div>
+                                    </>
+                                )}
+
+                                {/* UPLOAD DOKUMEN TAMBAHAN LANGSUNG (AJAX) */}
+                                <div className="mt-8 pt-6 border-t border-[#27272a]">
+                                    <p className="text-[10px] font-bold text-slate-500 mb-4 tracking-widest uppercase">Upload Dokumen Tambahan / Lainnya:</p>
+
+                                    <div className="flex flex-col md:flex-row gap-3 items-end">
+                                        <div className="w-full md:w-2/5">
+                                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Kategori / Judul</label>
+                                            <input type="text" value={customDocName} onChange={e => setCustomDocName(e.target.value)} placeholder="Cth: KTP Pasangan..." className={inputClass} />
+                                        </div>
+                                        <div className="w-full md:w-2/5">
+                                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Pilih File</label>
+                                            <input type="file" id="customFile" className="hidden" onChange={e => setCustomDocFile(e.target.files ? e.target.files[0] : null)} />
+                                            <label htmlFor="customFile" className="flex items-center justify-between px-4 py-[14px] bg-[#09090b] border border-[#27272a] text-slate-300 rounded-xl hover:bg-[#18181b] transition-all cursor-pointer text-xs">
+                                                <span className="truncate max-w-[150px]">{customDocFile ? customDocFile.name : 'Belum ada file...'}</span>
+                                                <Upload size={14} className="text-slate-500 shrink-0"/>
+                                            </label>
+                                        </div>
+                                        <button type="button" onClick={addCustomDoc} disabled={!customDocName || !customDocFile || isUploadingDoc} className="w-full md:w-1/5 py-[14px] bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-indigo-500 text-white font-bold rounded-xl text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(79,70,229,0.2)]">
+                                            {isUploadingDoc ? 'Uploading...' : <><PlusCircle size={16}/> Upload</>}
+                                        </button>
+                                    </div>
+                                    <p className="text-[10px] text-emerald-500 font-bold mt-3 tracking-widest uppercase">*Dokumen akan langsung terupload dan masuk ke Arsip Tersimpan.</p>
                                 </div>
-                            )}
+                            </div>
 
                             {getReqs().inputs.length > 0 && (
                                 <div className={`${cardClass} animate-fade-in`}>

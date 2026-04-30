@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('clients', function (Blueprint $table) {
             $table->id();
-            $table->enum('type', ['perorangan', 'badan_hukum'])->default('perorangan');
+            $table->enum('type', ['perorangan', 'badan_hukum', 'kelompok'])->default('perorangan');
             $table->string('name');
             $table->string('nik_or_npwp', 30)->unique()->comment('NIK untuk perorangan, NPWP untuk badan');
             $table->string('phone', 20)->nullable();

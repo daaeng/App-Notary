@@ -115,9 +115,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 
     // 6. AREA BERBAHAYA / SENSITIF (Hanya Super Admin)
-    // UPDATE: Hapus 'users' dari sini karena sudah dipindah ke atas
     Route::group(['middleware' => ['role:super_admin']], function () {
-        // Hapus Order & File (BOS Tidak Boleh Hapus Order)
+        // Hapus Order & File
         Route::delete('orders/{order}', [OrderController::class, 'destroy'])->name('orders.destroy');
         Route::delete('orders/files/{file}', [OrderController::class, 'deleteFile'])->name('orders.deleteFile');
 
@@ -126,9 +125,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('office-settings', [CompanyController::class, 'update'])->name('settings.update');
         Route::delete('/office-settings/logo', [\App\Http\Controllers\CompanyController::class, 'destroyLogo'])->name('settings.logo.delete');
 
-        // PERSYARATAN LAYANAN
+        // PERSYARATAN LAYANAN (SUPER ADMIN FULL CONTROL)
+        Route::post('/persyaratan', [RequirementController::class, 'store'])->name('requirements.store');
         Route::put('/persyaratan/{service}', [RequirementController::class, 'update'])->name('requirements.update');
-
+        Route::delete('/persyaratan/{service}', [RequirementController::class, 'destroy'])->name('requirements.destroy');
      });
 
 
