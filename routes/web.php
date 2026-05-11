@@ -129,6 +129,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/persyaratan', [RequirementController::class, 'store'])->name('requirements.store');
         Route::put('/persyaratan/{service}', [RequirementController::class, 'update'])->name('requirements.update');
         Route::delete('/persyaratan/{service}', [RequirementController::class, 'destroy'])->name('requirements.destroy');
+
+        // [BARU] EDIT LOG INVENTARIS (HANYA SUPER ADMIN)
+        Route::put('inventaris/logs/{log}', [\App\Http\Controllers\InventoryController::class, 'updateLog'])->name('inventories.logs.update');
      });
 
 
@@ -140,6 +143,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // PAYMENT ROUTES (Admin, Staff, Notaris, & BOS)
     Route::post('orders/{order}/payments', [PaymentController::class, 'store'])->name('orders.payments.store');
+    Route::post('orders/{order}/payments', [PaymentController::class, 'store'])->name('payments.store');
+    Route::delete('payments/{payment}', [PaymentController::class, 'destroy'])->name('payments.destroy');
     // Route::post('orders/{order}/payments', [PaymentController::class, 'store'])->name('payments.store');
     // Route::post('/orders/{order}/payments', [OrderController::class, 'addPayment'])->name('orders.payments.store');
     // Route::delete('payments/{payment}', [PaymentController::class, 'destroy'])->name('payments.destroy');
@@ -160,6 +165,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // 9. PERSYARATAN LAYANAN (Bisa diakses semua role yang sudah disebutkan)
     Route::get('/persyaratan', [RequirementController::class, 'index'])->name('requirements.index');
+
+    // --- FITUR INVENTARIS KANTOR ---
+    // 1. Semua bisa melihat dan mengambil stok
+    Route::group(['middleware' => ['role:super_admin|notaris|staff|bos']], function () {
+        Route::get('inventaris', [\App\Http\Controllers\InventoryController::class, 'index'])->name('inventories.index');
+        Route::post('inventaris/{inventory}/take', [\App\Http\Controllers\InventoryController::class, 'take'])->name('inventories.take');
+    });
+
+    // 2. Hanya Super Admin & Notaris yang bisa Tambah, Edit, Hapus, dan Setor Stok
+    Route::group(['middleware' => ['role:super_admin|notaris']], function () {
+        Route::post('inventaris', [\App\Http\Controllers\InventoryController::class, 'store'])->name('inventories.store');
+        Route::post('inventaris/{inventory}/add-stock', [\App\Http\Controllers\InventoryController::class, 'addStock'])->name('inventories.add_stock');
+        Route::put('inventaris/{inventory}', [\App\Http\Controllers\InventoryController::class, 'update'])->name('inventories.update');
+        Route::delete('inventaris/{inventory}', [\App\Http\Controllers\InventoryController::class, 'destroy'])->name('inventories.destroy');
+    });
 
 });
 

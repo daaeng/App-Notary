@@ -25,7 +25,8 @@ import {
     Building2,
     BookOpen,
     Calculator,
-    ListChecks
+    ListChecks,
+    Package // <-- [BARU] Import icon Package untuk Inventaris
 } from 'lucide-react';
 import { PageProps } from '@/types';
 import { route } from 'ziggy-js';
@@ -61,12 +62,18 @@ export function AppSidebar() {
                     icon: FileText,
                     show: ['super_admin', 'staff', 'notaris'].includes(userRole)
                 },
-                // --- [BARU] MENU SIMULASI BIAYA ---
                 {
                     title: 'Simulasi Biaya',
                     url: route('simulasi.index'),
                     icon: Calculator,
-                    // Bisa diakses oleh admin, staf front office, notaris, dan bos
+                    show: ['super_admin', 'staff', 'notaris'].includes(userRole)
+                },
+                // --- [BARU] MENU INVENTARIS ---
+                {
+                    title: 'Inventaris',
+                    url: route('inventories.index'),
+                    icon: Package,
+                    // Bisa diakses oleh admin, notaris, dan staf (untuk cek dan ambil stok)
                     show: ['super_admin', 'staff', 'notaris'].includes(userRole)
                 },
                 {
@@ -126,7 +133,6 @@ export function AppSidebar() {
                     url: route('activity-logs.index'),
                     icon: Activity,
                     show: ['super_admin', 'notaris'].includes(userRole)
-                    // show: userRole === 'super_admin'
                 },
             ]
         }

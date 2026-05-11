@@ -8,14 +8,42 @@ use Inertia\Inertia;
 
 class ExpenseController extends Controller
 {
-    // Tampilkan Daftar Pengeluaran
-    public function index()
+    // Tampilkan Daftar Pengeluaran (Dengan Filter Bulan)
+    public function index(Request $request)
     {
-        $expenses = Expense::latest('transaction_date')
-            ->paginate(10);
+        // Ambil filter dari URL, default ke bulan & tahun saat ini
+        $month = $request->query('month', now()->format('m'));
+        $year = $request->query('year', now()->format('Y'));
+
+        // Buat query dasar
+        $query = Expense::whereMonth('transaction_date', $month)
+                        ->whereYear('transaction_date', $year);
+
+        // Hitung Total Pengeluaran Bulan Tersebut
+        $totalAmount = (clone $query)->sum('amount');
+
+        // Hitung Statistik Per Kategori
+        $categoryStats = (clone $query)
+            ->selectRaw('category, SUM(amount) as total')
+            ->groupBy('category')
+            ->pluck('total', 'category');
+
+        // Ambil data untuk tabel dengan pagination
+        $expenses = $query->latest('transaction_date')
+                          ->latest('id')
+                          ->paginate(15)
+                          ->withQueryString();
 
         return Inertia::render('Expenses/Index', [
-            'expenses' => $expenses
+            'expenses' => $expenses,
+            'filters' => [
+                'month' => $month,
+                'year' => $year,
+            ],
+            'stats' => [
+                'totalAmount' => $totalAmount,
+                'categoryStats' => $categoryStats
+            ]
         ]);
     }
 

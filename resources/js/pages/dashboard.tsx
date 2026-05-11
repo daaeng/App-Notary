@@ -20,8 +20,17 @@ interface DashboardProps extends PageProps {
 export default function DashboardOperations({ auth, stats, recentOrders, upcomingSchedules }: DashboardProps) {
 
     const rupiah = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
-    const formatTime = (date: string) => new Date(date).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-    const formatDate = (date: string) => new Date(date).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' });
+
+    // --- SOLUSI ZONA WAKTU (TIMEZONE FIX) ---
+    // Membaca jam persis sesuai database, mengabaikan konversi otomatis browser
+    const parseLocal = (dateStr: string) => {
+        if (!dateStr) return new Date();
+        const cleanStr = dateStr.split('.')[0].replace('Z', '');
+        return new Date(cleanStr.replace(' ', 'T'));
+    };
+
+    const formatTime = (date: string) => parseLocal(date).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    const formatDate = (date: string) => parseLocal(date).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' });
 
     // Sapaan Waktu
     const hour = new Date().getHours();

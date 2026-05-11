@@ -1,8 +1,12 @@
-import { FormEventHandler, useMemo } from 'react';
+import { FormEventHandler } from 'react';
 import AppLayout from '@/layouts/app-layout';
-import { Head, useForm, router } from '@inertiajs/react';
+import { Head, useForm, router, Link } from '@inertiajs/react';
 import { PageProps } from '@/types';
 import { route } from 'ziggy-js';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
+
+const MySwal = withReactContent(Swal);
 
 interface Expense {
     id: number;
@@ -15,9 +19,11 @@ interface Expense {
 
 interface Props extends PageProps {
     expenses: { data: Expense[]; links: any[] };
+    filters: { month: string; year: string };
+    stats: { totalAmount: number; categoryStats: Record<string, number> };
 }
 
-export default function ExpenseWallet({ expenses }: Props) {
+export default function ExpenseWallet({ expenses, filters, stats }: Props) {
     const { data, setData, post, processing, reset } = useForm({
         title: '',
         amount: '',
@@ -28,37 +34,68 @@ export default function ExpenseWallet({ expenses }: Props) {
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        post(route('expenses.store'), { onSuccess: () => reset() });
+        post(route('expenses.store'), {
+            preserveScroll: true,
+            onSuccess: () => {
+                reset();
+                MySwal.fire({ title: 'Berhasil!', text: 'Pengeluaran dicatat.', icon: 'success', timer: 1500, showConfirmButton: false, background: '#121214', color: '#fff' });
+            }
+        });
     };
 
     const deleteExpense = (id: number) => {
-        if (confirm('Batalkan transaksi ini?')) {
-            router.delete(route('expenses.destroy', id));
-        }
+        MySwal.fire({
+            title: 'Hapus Transaksi?', text: 'Data pengeluaran ini akan dibatalkan/dihapus permanen.', icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, Hapus', cancelButtonText: 'Batal', background: '#121214', color: '#fff', confirmButtonColor: '#e11d48', cancelButtonColor: '#3f3f46'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                router.delete(route('expenses.destroy', id), { preserveScroll: true });
+            }
+        });
     };
 
     const rupiah = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
-    // Hitung Total & Kategori (Client Side Simulation)
-    const totalAmount = useMemo(() => expenses.data.reduce((acc, curr) => acc + Number(curr.amount), 0), [expenses.data]);
-
-    // Hitung total per kategori untuk progress bar
-    const categoryStats = useMemo(() => {
-        const stats: any = {};
-        expenses.data.forEach(item => {
-            stats[item.category] = (stats[item.category] || 0) + Number(item.amount);
-        });
-        return stats;
-    }, [expenses.data]);
-
+    // Ambil Data dari Backend
+    const totalAmount = stats.totalAmount || 0;
+    const categoryStats = stats.categoryStats || {};
     const categories = ['Operasional', 'Gaji Staff', 'ATK & Kertas', 'Konsumsi', 'Transport', 'Biaya Taktis', 'Lainnya'];
+
+    // Format Nama Bulan yang Sedang Dipilih
+    const selectedDate = new Date(Number(filters.year), Number(filters.month) - 1, 1);
+    const monthName = selectedDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+
+    // Handle Filter Perubahan Bulan
+    const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value; // Format: YYYY-MM
+        if (val) {
+            const [y, m] = val.split('-');
+            router.get(route('expenses.index'), { month: m, year: y }, { preserveState: true, preserveScroll: true });
+        }
+    };
 
     return (
         <AppLayout breadcrumbs={[{ title: 'Keuangan', href: '/expenses' }]}>
             <Head title="Dompet Kantor" />
 
             <div className="min-h-screen bg-slate-50 dark:bg-black font-sans transition-colors duration-300 p-4 lg:p-8">
-                <div className="w-full mx-auto">
+                <div className="w-full mx-auto space-y-8">
+
+                    {/* HEADER & FILTER */}
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Pengeluaran Kantor</h1>
+                            <p className="mt-1 text-slate-500 text-sm font-medium">Pantau arus kas keluar berdasarkan periode bulan.</p>
+                        </div>
+                        <div className="flex items-center gap-3 bg-white dark:bg-zinc-900 p-2 pl-4 rounded-2xl shadow-sm border border-gray-200 dark:border-zinc-800">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Filter Bulan:</label>
+                            <input
+                                type="month"
+                                value={`${filters.year}-${String(filters.month).padStart(2, '0')}`}
+                                onChange={handleFilterChange}
+                                className="bg-slate-50 dark:bg-black border border-slate-200 dark:border-zinc-800 text-slate-800 dark:text-white text-sm rounded-xl px-4 py-2 focus:ring-rose-500 outline-none font-bold"
+                            />
+                        </div>
+                    </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
@@ -67,15 +104,14 @@ export default function ExpenseWallet({ expenses }: Props) {
 
                             {/* 1. VISUAL CREDIT CARD */}
                             <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-800 to-black p-8 text-white shadow-2xl shadow-slate-900/40 border border-slate-700/50 group hover:scale-[1.02] transition-transform duration-500">
-                                {/* Efek Glossy */}
                                 <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl"></div>
-                                <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 bg-indigo-500 opacity-10 rounded-full blur-3xl"></div>
+                                <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 bg-rose-500 opacity-10 rounded-full blur-3xl"></div>
 
                                 <div className="relative z-10 flex flex-col justify-between h-48">
                                     <div className="flex justify-between items-start">
                                         <div>
                                             <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">Total Pengeluaran</p>
-                                            <p className="text-xs text-slate-500 mt-1">Halaman Ini</p>
+                                            <p className="text-xs text-rose-400 mt-1 font-bold">Periode: {monthName}</p>
                                         </div>
                                         <div className="text-2xl opacity-80">💳</div>
                                     </div>
@@ -108,31 +144,32 @@ export default function ExpenseWallet({ expenses }: Props) {
                             {/* 2. CATEGORY BREAKDOWN */}
                             <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-gray-200 dark:border-zinc-800 shadow-sm">
                                 <h3 className="font-bold text-slate-800 dark:text-white mb-4 text-sm uppercase tracking-wide">
-                                    Pos Pengeluaran
+                                    Pos Pengeluaran ({monthName})
                                 </h3>
                                 <div className="space-y-4">
-                                    {Object.entries(categoryStats).map(([cat, amount]: [string, any], idx) => {
-                                        const percent = Math.min((amount / totalAmount) * 100, 100) || 0;
-                                        const colors = ['bg-indigo-500', 'bg-rose-500', 'bg-amber-500', 'bg-emerald-500', 'bg-cyan-500'];
-                                        const color = colors[idx % colors.length];
+                                    {Object.keys(categoryStats).length === 0 ? (
+                                        <p className="text-center text-xs text-slate-400 italic py-6">Belum ada transaksi di bulan ini.</p>
+                                    ) : (
+                                        Object.entries(categoryStats).map(([cat, amount]: [string, any], idx) => {
+                                            const percent = Math.min((amount / totalAmount) * 100, 100) || 0;
+                                            const colors = ['bg-indigo-500', 'bg-rose-500', 'bg-amber-500', 'bg-emerald-500', 'bg-cyan-500'];
+                                            const color = colors[idx % colors.length];
 
-                                        return (
-                                            <div key={cat}>
-                                                <div className="flex justify-between text-xs mb-1 font-bold text-slate-600 dark:text-zinc-400">
-                                                    <span>{cat}</span>
-                                                    <span>{Math.round(percent)}%</span>
+                                            return (
+                                                <div key={cat}>
+                                                    <div className="flex justify-between text-xs mb-1 font-bold text-slate-600 dark:text-zinc-400">
+                                                        <span>{cat}</span>
+                                                        <span>{Math.round(percent)}%</span>
+                                                    </div>
+                                                    <div className="w-full bg-gray-100 dark:bg-zinc-800 h-2 rounded-full overflow-hidden">
+                                                        <div className={`h-full ${color}`} style={{ width: `${percent}%` }}></div>
+                                                    </div>
+                                                    <div className="text-right mt-0.5">
+                                                        <span className="text-[10px] font-mono text-slate-400">{rupiah(amount)}</span>
+                                                    </div>
                                                 </div>
-                                                <div className="w-full bg-gray-100 dark:bg-zinc-800 h-2 rounded-full overflow-hidden">
-                                                    <div className={`h-full ${color}`} style={{ width: `${percent}%` }}></div>
-                                                </div>
-                                                <div className="text-right mt-0.5">
-                                                    <span className="text-[10px] font-mono text-slate-400">{rupiah(amount)}</span>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                    {Object.keys(categoryStats).length === 0 && (
-                                        <p className="text-center text-xs text-slate-400 italic py-2">Belum ada data statistik.</p>
+                                            );
+                                        })
                                     )}
                                 </div>
                             </div>
@@ -156,7 +193,7 @@ export default function ExpenseWallet({ expenses }: Props) {
                                             type="text"
                                             value={data.title}
                                             onChange={e => setData('title', e.target.value)}
-                                            className="w-full bg-slate-50 dark:bg-black border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-3 focus:ring-rose-500 focus:border-rose-500 text-slate-800 dark:text-white font-bold"
+                                            className="w-full bg-slate-50 dark:bg-black border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-3 focus:ring-rose-500 outline-none text-slate-800 dark:text-white font-bold"
                                             placeholder="Contoh: Pembayaran Listrik"
                                             required
                                         />
@@ -168,7 +205,7 @@ export default function ExpenseWallet({ expenses }: Props) {
                                             type="number"
                                             value={data.amount}
                                             onChange={e => setData('amount', e.target.value)}
-                                            className="w-full bg-slate-50 dark:bg-black border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-3 focus:ring-rose-500 focus:border-rose-500 text-rose-600 dark:text-rose-500 font-mono font-black"
+                                            className="w-full bg-slate-50 dark:bg-black border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-3 focus:ring-rose-500 outline-none text-rose-600 dark:text-rose-500 font-mono font-black"
                                             placeholder="0"
                                             required
                                         />
@@ -180,7 +217,7 @@ export default function ExpenseWallet({ expenses }: Props) {
                                             type="date"
                                             value={data.transaction_date}
                                             onChange={e => setData('transaction_date', e.target.value)}
-                                            className="w-full bg-slate-50 dark:bg-black border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-3 focus:ring-rose-500 focus:border-rose-500 text-slate-800 dark:text-white"
+                                            className="w-full bg-slate-50 dark:bg-black border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-3 focus:ring-rose-500 outline-none text-slate-800 dark:text-white"
                                             required
                                         />
                                     </div>
@@ -190,7 +227,7 @@ export default function ExpenseWallet({ expenses }: Props) {
                                         <select
                                             value={data.category}
                                             onChange={e => setData('category', e.target.value)}
-                                            className="w-full bg-slate-50 dark:bg-black border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-3 focus:ring-rose-500 focus:border-rose-500 text-slate-800 dark:text-white"
+                                            className="w-full bg-slate-50 dark:bg-black border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-3 focus:ring-rose-500 outline-none text-slate-800 dark:text-white cursor-pointer"
                                         >
                                             {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                                         </select>
@@ -202,18 +239,18 @@ export default function ExpenseWallet({ expenses }: Props) {
                                             type="text"
                                             value={data.description}
                                             onChange={e => setData('description', e.target.value)}
-                                            className="w-full bg-slate-50 dark:bg-black border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-3 focus:ring-rose-500 focus:border-rose-500 text-slate-800 dark:text-white"
+                                            className="w-full bg-slate-50 dark:bg-black border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-3 focus:ring-rose-500 outline-none text-slate-800 dark:text-white"
                                             placeholder="..."
                                         />
                                     </div>
 
-                                    <div className="md:col-span-2">
+                                    <div className="md:col-span-2 mt-2">
                                         <button
                                             type="submit"
                                             disabled={processing}
-                                            className="w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-black font-bold rounded-xl hover:opacity-90 transition shadow-lg flex justify-center items-center gap-2"
+                                            className="w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-black font-black text-xs uppercase tracking-widest rounded-xl hover:opacity-90 active:scale-95 transition-all shadow-lg flex justify-center items-center gap-2"
                                         >
-                                            {processing ? '...' : '💸 Simpan Transaksi'}
+                                            {processing ? 'Menyimpan...' : '💸 Simpan Transaksi'}
                                         </button>
                                     </div>
                                 </form>
@@ -221,12 +258,12 @@ export default function ExpenseWallet({ expenses }: Props) {
 
                             {/* TRANSACTION LIST (Feed Style) */}
                             <div>
-                                <h3 className="font-bold text-slate-500 dark:text-zinc-500 text-xs uppercase tracking-widest mb-4 ml-2">Mutasi Terakhir</h3>
+                                <h3 className="font-bold text-slate-500 dark:text-zinc-500 text-xs uppercase tracking-widest mb-4 ml-2">Riwayat {monthName}</h3>
                                 <div className="space-y-4">
                                     {expenses.data.length === 0 ? (
                                         <div className="text-center py-12 bg-white dark:bg-zinc-900 rounded-3xl border border-dashed border-gray-300 dark:border-zinc-800">
                                             <p className="text-3xl opacity-30 mb-2">🏷️</p>
-                                            <p className="text-sm text-slate-400">Belum ada transaksi.</p>
+                                            <p className="text-sm font-bold text-slate-400">Tidak ada pengeluaran di bulan ini.</p>
                                         </div>
                                     ) : (
                                         expenses.data.map((item) => (
@@ -261,8 +298,8 @@ export default function ExpenseWallet({ expenses }: Props) {
                                                     </p>
                                                     <button
                                                         onClick={() => deleteExpense(item.id)}
-                                                        className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
-                                                        title="Hapus"
+                                                        className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition opacity-0 group-hover:opacity-100"
+                                                        title="Hapus Transaksi"
                                                     >
                                                         ✕
                                                     </button>
@@ -272,6 +309,21 @@ export default function ExpenseWallet({ expenses }: Props) {
                                         ))
                                     )}
                                 </div>
+
+                                {/* Pagination Bawah (Jika datanya sangat banyak) */}
+                                {expenses.links && expenses.links.length > 3 && (
+                                    <div className="mt-6 flex justify-center gap-1">
+                                        {expenses.links.map((link: any, i: number) => (
+                                            <Link
+                                                key={i}
+                                                href={link.url || '#'}
+                                                dangerouslySetInnerHTML={{ __html: link.label }}
+                                                preserveScroll
+                                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${link.active ? 'bg-rose-600 text-white' : 'bg-white dark:bg-zinc-900 text-slate-400 hover:bg-gray-50 dark:hover:bg-zinc-800 border border-gray-200 dark:border-zinc-800'} ${!link.url ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
                         </div>

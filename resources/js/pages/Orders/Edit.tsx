@@ -3,7 +3,8 @@ import AppLayout from '@/layouts/app-layout';
 import { Head, useForm, router, Link } from '@inertiajs/react';
 import { PageProps } from '@/types';
 import { route } from 'ziggy-js';
-import { Upload, FileText, CheckCircle2, Calculator, ShieldCheck, Info, MapPin, Wallet, ArrowLeft, Trash2, Printer, FileOutput, Download, PlusCircle, X } from 'lucide-react';
+// [PERBAIKAN]: Menambahkan ikon "Eye" untuk fitur Lihat Dokumen
+import { Upload, FileText, CheckCircle2, Calculator, ShieldCheck, Info, MapPin, Wallet, ArrowLeft, Trash2, Printer, FileOutput, Download, PlusCircle, X, Eye } from 'lucide-react';
 
 interface Props extends PageProps { order: any; clients: any[]; serviceTypes: any[]; company: any; }
 
@@ -182,8 +183,26 @@ export default function OrderEdit({ auth, order, clients, serviceTypes, company 
                                         <div className="space-y-3">
                                             {order.files.map((file: any) => (
                                                 <div key={file.id} className="flex justify-between items-center p-4 bg-[#09090b] rounded-xl border border-emerald-500/30">
-                                                    <div className="flex items-center gap-4"><CheckCircle2 size={20} className="text-emerald-500 shrink-0"/><div><p className="text-sm font-bold text-white truncate max-w-[200px] md:max-w-xs">{file.file_name}</p><p className="text-[10px] text-emerald-500 uppercase tracking-widest mt-0.5">{file.category}</p></div></div>
-                                                    <div className="flex items-center gap-2"><a href={getFileUrl(file.file_path)} target="_blank" className="p-2.5 text-slate-400 hover:text-white bg-[#18181b] rounded-lg border border-[#27272a] transition"><Download size={16}/></a><button type="button" onClick={() => deleteFile(file.id)} className="p-2.5 text-red-500 hover:text-white hover:bg-red-600 bg-[#18181b] rounded-lg border border-[#27272a] transition"><Trash2 size={16}/></button></div>
+                                                    <div className="flex items-center gap-4">
+                                                        <CheckCircle2 size={20} className="text-emerald-500 shrink-0"/>
+                                                        <div>
+                                                            <a href={getFileUrl(file.file_path)} target="_blank" rel="noreferrer" className="block text-sm font-bold text-white hover:text-blue-400 transition-colors truncate max-w-[200px] md:max-w-xs" title="Klik untuk melihat dokumen">
+                                                                {file.file_name}
+                                                            </a>
+                                                            <p className="text-[10px] text-emerald-500 uppercase tracking-widest mt-0.5">{file.category}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <a href={getFileUrl(file.file_path)} target="_blank" rel="noreferrer" className="p-2.5 text-blue-400 hover:text-white bg-[#18181b] rounded-lg border border-[#27272a] transition" title="Lihat Dokumen">
+                                                            <Eye size={16}/>
+                                                        </a>
+                                                        <a href={getFileUrl(file.file_path)} download className="p-2.5 text-slate-400 hover:text-white bg-[#18181b] rounded-lg border border-[#27272a] transition" title="Download Dokumen">
+                                                            <Download size={16}/>
+                                                        </a>
+                                                        <button type="button" onClick={() => deleteFile(file.id)} className="p-2.5 text-red-500 hover:text-white hover:bg-red-600 bg-[#18181b] rounded-lg border border-[#27272a] transition" title="Hapus Dokumen">
+                                                            <Trash2 size={16}/>
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>
