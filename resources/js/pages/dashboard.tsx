@@ -73,7 +73,7 @@ export default function DashboardOperations({ auth, stats, recentOrders, upcomin
                         <div className="lg:col-span-3 space-y-6">
 
                             {/* Card: Profit */}
-                            <div className="bg-gradient-to-br from-slate-900 to-black rounded-2xl p-6 shadow-xl text-white relative overflow-hidden group">
+                            {/* <div className="bg-gradient-to-br from-slate-900 to-black rounded-2xl p-6 shadow-xl text-white relative overflow-hidden group">
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-10 -mt-10 transition-transform group-hover:scale-110"></div>
                                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Net Profit (Bulan Ini)</p>
                                 <h3 className="text-3xl font-black">{rupiah(stats.profit)}</h3>
@@ -87,7 +87,7 @@ export default function DashboardOperations({ auth, stats, recentOrders, upcomin
                                         <span className="text-red-400 font-mono font-bold">- {rupiah(stats.expense)}</span>
                                     </div>
                                 </div>
-                            </div>
+                            </div> */}
 
                             {/* Card: Status Order (Vertical Stack) */}
                             <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm p-2">
