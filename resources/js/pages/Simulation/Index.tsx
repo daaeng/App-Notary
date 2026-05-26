@@ -268,7 +268,7 @@ export default function SimulationIndex({ serviceTypes = [], company }: any) {
                                                         <div className="flex justify-between items-end mb-2 print:mb-0 print:items-center">
                                                             <label className={`${labelClasses} !mb-0`}>Pajak Pembeli (BPHTB)</label>
                                                             {nilaiTertinggi > 0 && (
-                                                                <div className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-1.5 rounded-lg border border-emerald-500/20 text-right print:hidden">
+                                                                <div className="text-[10px] text-emerald-400 font-bold hidden bg-emerald-500/10 px-2.5 py-1.5 rounded-lg border border-emerald-500/20 text-right print:hidden">
                                                                     <span className="block text-slate-500 text-[8px] mb-0.5 uppercase tracking-widest">Acuan: {labelNilai} ({rupiah(nilaiTertinggi)})</span>
                                                                     5% × ({rupiah(nilaiTertinggi)} - {rupiah(npoptkpDisplay)})
                                                                 </div>
@@ -288,7 +288,7 @@ export default function SimulationIndex({ serviceTypes = [], company }: any) {
                                                         <div className="flex justify-between items-end mb-2 print:mb-0 print:items-center">
                                                             <label className={`${labelClasses} !mb-0`}>Pajak Penjual (PPh)</label>
                                                             {nilaiTertinggi > 0 && (
-                                                                <div className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-1.5 rounded-lg border border-emerald-500/20 text-right print:hidden">
+                                                                <div className="text-[10px] text-emerald-400 font-bold hidden bg-emerald-500/10 px-2.5 py-1.5 rounded-lg border border-emerald-500/20 text-right print:hidden">
                                                                     <span className="block text-slate-500 text-[8px] mb-0.5 uppercase tracking-widest">Acuan: {labelNilai} ({rupiah(nilaiTertinggi)})</span>
                                                                     2.5% × {rupiah(nilaiTertinggi)}
                                                                 </div>

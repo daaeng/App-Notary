@@ -57,36 +57,55 @@ export default function Invoice({ order, company }: InvoiceProps) {
     };
 
     return (
-        <div className="min-h-screen bg-gray-200 p-8 flex justify-center font-serif text-slate-800">
+        <div className="min-h-screen bg-gray-200 print:bg-white print:p-0 flex justify-center font-serif text-slate-800 print:block">
             <Head title={`Invoice - ${order.order_number}`} />
+            <style>{`
+                @media print {
+                    .no-print { display: none !important; }
+                    body, html { background: white !important; margin: 0; padding: 0; }
+                    .min-h-screen, .bg-gray-200 { background-color: white !important; min-height: 0 !important; }
+                    .min-h-\\[297mm\\] { min-height: 0 !important; }
+                    .min-h-\\[400px\\] { min-height: 0 !important; }
+                    @page { margin: 10mm; }
+                    .print-reset { margin: 0 !important; border: none !important; box-shadow: none !important; }
+                }
+            `}</style>
+
+            {/* PRINT BUTTON (Dipindah ke luar kertas agar tidak menimpa kop) */}
+            <div className="fixed top-8 right-8 z-50 no-print">
+                <button onClick={() => window.print()} className="px-6 py-3 bg-slate-900 text-white font-bold rounded-xl shadow-2xl hover:bg-slate-800 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 text-sm border-2 border-slate-700">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                    Cetak Invoice
+                </button>
+            </div>
 
             {/* A4 Paper Styling */}
-            <div className="bg-white w-full max-w-[210mm] min-h-[297mm] p-12 shadow-2xl border border-gray-300 relative print:shadow-none print:border-none print:p-2">
+            <div className="bg-white w-full max-w-[210mm] min-h-[297mm] p-12 shadow-2xl border border-gray-300 relative print-reset print:p-0 mx-auto mt-16 print:mt-0">
 
                 {/* HEADER KOP SURAT */}
-                <div className="flex justify-between items-start border-b-[3px] border-slate-900 pb-6 mb-8">
-                    <div className="w-2/3">
-                        <h1 className="text-2xl font-black text-slate-900 tracking-tight uppercase mb-1">{company?.name || 'KANTOR NOTARIS & PPAT'}</h1>
-                        <p className="text-base font-bold text-slate-800 uppercase">{company?.notary_name}</p>
-                        {company?.sk_number && (
-                            <p className="text-xs font-bold text-slate-600 mb-2 mt-0.5">SK: {company.sk_number}</p>
-                        )}
-                        <p className="text-xs text-slate-600 leading-relaxed pr-8 mt-2">{company?.address}</p>
-                        <p className="text-xs text-slate-600 mt-1">Telp: {company?.phone} &nbsp;|&nbsp; Email: {company?.email}</p>
-                    </div>
-                    <div className="text-right">
-                        <h2 className="text-4xl font-black text-slate-900 mb-2 tracking-tighter">INVOICE</h2>
-                        <p className="text-sm font-bold text-slate-700">No. {order.order_number}</p>
-                        <p className="text-xs text-slate-500 mt-1">Tanggal: {formatDate(order.created_at)}</p>
-                    </div>
+                <div className="border-b-[3px] border-double border-slate-900 pb-3 mb-5 text-center flex flex-col items-center">
+                    <img src="/storage/Garuda_logo.png" alt="Garuda" className="h-20 mb-2 object-contain" />
+                    <h1 className="text-[16px] font-black text-slate-900 tracking-tight uppercase">NOTARIS</h1>
+                    <h2 className="text-[18px] font-black text-slate-900 uppercase mt-0.5">{company?.notary_name || 'ORISTA MIRANTI IRPADA ADAM, S.H., M.Kn.'}</h2>
+                    <p className="text-[10px] font-bold text-slate-800 mt-1">SK. KEMENKUM RI No. {company?.sk_number || 'AHU-111.AH.02.01 TAHUN 2026'}</p>
+                    <p className="text-[10px] text-slate-800 mt-0.5">Kedudukan Kabupaten Natuna, Wilayah Jabatan Provinsi Kepulauan Riau</p>
+                    <p className="text-[10px] text-slate-800 mt-0.5">{company?.address || 'Jl. Sudirman, RT.03 RW. 01 Air Kolek, Nomor 050, Kelurahan Ranai, Kabupaten Natuna'}</p>
+                    <p className="text-[10px] text-slate-800 mt-0.5">Telp : {company?.phone || '+62 812-3001-5677'} || Email : {company?.email || 'oristanotaris@gmail.com'}</p>
+                </div>
+
+                {/* TITLE INVOICE DIPISAH DARI KOP SURAT */}
+                <div className="text-center mb-8">
+                    <h2 className="text-[16px] font-black text-slate-900 mb-1 tracking-tighter uppercase underline decoration-2 underline-offset-4">Invoice</h2>
+                    <p className="text-sm font-bold text-slate-700">No. {order.order_number}</p>
+                    <p className="text-xs text-slate-500 mt-1">Tanggal: {formatDate(order.created_at)}</p>
                 </div>
 
                 {/* INFO KLIEN & OBJEK */}
-                <div className="flex justify-between mb-8 text-sm">
+                <div className="flex justify-between mb-8 text-[12px]">
                     <div className="w-1/2 bg-slate-50 p-4 rounded-lg border border-slate-100">
                         <p className="font-bold text-slate-500 uppercase text-[10px] tracking-widest mb-2">Tagihan Kepada:</p>
                         <p className="font-black text-slate-800 text-lg mb-1">{order.client?.name}</p>
-                        <p className="text-slate-600">{order.client?.phone}</p>
+                        {/* <p className="text-slate-600">{order.client?.phone}</p> */}
                         <p className="text-slate-600 mt-1 line-clamp-2">{order.client?.address}</p>
                     </div>
                     <div className="w-1/2 text-right">
@@ -178,15 +197,6 @@ export default function Invoice({ order, company }: InvoiceProps) {
                         <p className="font-bold text-slate-900">{company?.notary_name}</p>
                     </div>
                 </div>
-
-                {/* PRINT BUTTON (Disembunyikan saat diprint) */}
-                <div className="absolute top-12 right-12 print:hidden">
-                    <button onClick={() => window.print()} className="px-6 py-3 bg-slate-900 text-white font-bold rounded-lg shadow-lg hover:bg-slate-800 transition-colors flex items-center gap-2 text-sm">
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-                        Cetak Invoice
-                    </button>
-                </div>
-
             </div>
         </div>
     );

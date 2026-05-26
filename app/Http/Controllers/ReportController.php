@@ -20,7 +20,7 @@ class ReportController extends Controller
         $endDate = $request->input('end_date');
         $compareYear = (int) $request->input('compare_year', $year - 1);
 
-        $query = Order::with(['client', 'service']);
+        $query = Order::with(['client', 'service'])->where('status', 'done');
 
         if ($type === 'monthly') {
             $start = Carbon::create($year, $month, 1)->startOfMonth();
@@ -64,7 +64,8 @@ class ReportController extends Controller
         if ($type === 'monthly') {
             $lastMonth = Carbon::create($year, $month, 1)->subMonth();
             $jasaBulanIni = $orders->sum('service_price');
-            $jasaBulanLalu = Order::whereYear('updated_at', $lastMonth->year)
+            $jasaBulanLalu = Order::where('status', 'done')
+                ->whereYear('updated_at', $lastMonth->year)
                 ->whereMonth('updated_at', $lastMonth->month)
                 ->sum('service_price');
 
@@ -106,11 +107,13 @@ class ReportController extends Controller
         $data = [];
 
         for ($m = 1; $m <= 12; $m++) {
-            $current = Order::whereYear('updated_at', $year)
+            $current = Order::where('status', 'done')
+                ->whereYear('updated_at', $year)
                 ->whereMonth('updated_at', $m)
                 ->sum('service_price');
 
-            $previous = Order::whereYear('updated_at', $compareYear)
+            $previous = Order::where('status', 'done')
+                ->whereYear('updated_at', $compareYear)
                 ->whereMonth('updated_at', $m)
                 ->sum('service_price');
 

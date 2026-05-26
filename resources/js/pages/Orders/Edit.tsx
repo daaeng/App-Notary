@@ -14,10 +14,15 @@ export default function OrderEdit({ auth, order, clients, serviceTypes, company 
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const isFirstRun = useRef(true);
 
-    // --- STATE UNTUK UPLOAD DOKUMEN TAMBAHAN LANGSUNG ---
     const [customDocName, setCustomDocName] = useState('');
     const [customDocFile, setCustomDocFile] = useState<File | null>(null);
     const [isUploadingDoc, setIsUploadingDoc] = useState(false);
+
+    // --- STATE UNTUK UPLOAD AKTA ---
+    const [showUploadAktaModal, setShowUploadAktaModal] = useState(false);
+    const [aktaType, setAktaType] = useState('Minuta');
+    const [aktaFile, setAktaFile] = useState<File | null>(null);
+    const [isUploadingAkta, setIsUploadingAkta] = useState(false);
 
     const { data, setData, processing, errors } = useForm({
         client_id: order.client_id || '', service_id: order.service_id || '', description: order.description || '', akta_date: order.akta_date || '', status: order.status,
@@ -112,6 +117,25 @@ export default function OrderEdit({ auth, order, clients, serviceTypes, company 
                 if (fileInput) fileInput.value = '';
             },
             onFinish: () => setIsUploadingDoc(false)
+        });
+    };
+
+    const handleUploadAkta = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!aktaFile) return;
+        setIsUploadingAkta(true);
+
+        router.post(route('orders.upload', order.id), {
+            file: aktaFile,
+            file_name: aktaFile.name,
+            category: `Akta ${aktaType}`
+        }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setAktaFile(null);
+                setShowUploadAktaModal(false);
+            },
+            onFinish: () => setIsUploadingAkta(false)
         });
     };
 
@@ -289,7 +313,7 @@ export default function OrderEdit({ auth, order, clients, serviceTypes, company 
                                     <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Aksi Cepat</h3>
                                     <div className="grid grid-cols-2 gap-4">
                                         <a href={route('orders.invoice', order.id)} target="_blank" className="flex flex-col items-center justify-center p-6 bg-[#09090b] rounded-xl border border-[#27272a] hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all group cursor-pointer"><Printer className="text-slate-400 group-hover:text-emerald-500 mb-3 transition-colors" size={28}/><span className="text-xs font-bold text-slate-300 group-hover:text-white">Cetak Tagihan</span></a>
-                                        <a href="#" onClick={(e) => { e.preventDefault(); alert("Generasi Akta aktif setelah template diunggah."); }} className="flex flex-col items-center justify-center p-6 bg-[#09090b] rounded-xl border border-[#27272a] hover:border-amber-500/50 hover:bg-amber-500/5 transition-all group cursor-pointer"><FileOutput className="text-slate-400 group-hover:text-amber-500 mb-3 transition-colors" size={28}/><span className="text-xs font-bold text-slate-300 group-hover:text-white">Generate Akta</span></a>
+                                        <button type="button" onClick={() => setShowUploadAktaModal(true)} className="flex flex-col items-center justify-center p-6 bg-[#09090b] rounded-xl border border-[#27272a] hover:border-amber-500/50 hover:bg-amber-500/5 transition-all group cursor-pointer w-full"><Upload className="text-slate-400 group-hover:text-amber-500 mb-3 transition-colors" size={28}/><span className="text-xs font-bold text-slate-300 group-hover:text-white">Upload Akta</span></button>
                                     </div>
                                 </div>
 
@@ -447,6 +471,34 @@ export default function OrderEdit({ auth, order, clients, serviceTypes, company 
                             <button type="button" onClick={() => setShowDeleteModal(false)} className="flex-1 py-4 bg-[#27272a] text-white font-bold rounded-xl hover:bg-[#3f3f46] text-xs uppercase tracking-widest transition">Batal</button>
                             <button type="button" onClick={confirmDeleteOrder} className="flex-1 py-4 bg-red-600 text-white font-bold rounded-xl hover:bg-red-500 text-xs uppercase tracking-widest transition shadow-[0_0_15px_rgba(220,38,38,0.3)]">Hapus</button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* --- MODAL UPLOAD AKTA --- */}
+            {showUploadAktaModal && (
+                <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                    <div className="bg-[#121214] border border-[#27272a] rounded-[2.5rem] p-8 max-w-md w-full shadow-2xl">
+                        <h3 className="text-xl font-black text-white mb-6 uppercase tracking-tight flex items-center gap-3"><Upload className="text-amber-500"/> Upload Akta</h3>
+                        <form onSubmit={handleUploadAkta}>
+                            <div className="space-y-5 mb-8">
+                                <div>
+                                    <label className={labelClass}>Jenis Akta</label>
+                                    <select value={aktaType} onChange={e => setAktaType(e.target.value)} className={inputClass}>
+                                        <option value="Minuta">Minuta</option>
+                                        <option value="Salinan">Salinan</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className={labelClass}>Pilih File Akta</label>
+                                    <input type="file" onChange={e => setAktaFile(e.target.files ? e.target.files[0] : null)} className="block w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#27272a] file:text-slate-300 hover:file:bg-[#3f3f46] transition-all cursor-pointer" accept=".pdf,.doc,.docx" required />
+                                </div>
+                            </div>
+                            <div className="flex gap-4">
+                                <button type="button" onClick={() => setShowUploadAktaModal(false)} className="flex-1 py-4 bg-[#27272a] text-white font-bold rounded-xl hover:bg-[#3f3f46] text-xs uppercase tracking-widest transition">Batal</button>
+                                <button type="submit" disabled={isUploadingAkta} className="flex-1 py-4 bg-amber-600 disabled:opacity-50 text-white font-bold rounded-xl hover:bg-amber-500 text-xs uppercase tracking-widest transition shadow-[0_0_15px_rgba(245,158,11,0.3)]">{isUploadingAkta ? 'Uploading...' : 'Upload Akta'}</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}
