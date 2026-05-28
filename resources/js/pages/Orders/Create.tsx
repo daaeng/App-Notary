@@ -16,7 +16,7 @@ export default function OrderCreate({ clients, serviceTypes, company }: Props) {
     const [customDocFile, setCustomDocFile] = useState<File | null>(null);
 
     const { data, setData, post, processing, errors } = useForm({
-        client_id: '', service_id: '', description: '', seller_name: '', land_area: '', transaction_value: '', njop: '',
+        client_id: '', service_id: '', description: '', seller_name: '', land_area: '', transaction_value: '', njop: '', znt: '',
         service_price: 0, plotting_fee: 0, pnbp_fee: 0, validation_fee: 0, bphtb_fee: 0, pph_fee: 0, measurement_fee: 0, location_check_fee: 0, area_measurement_fee: 0, tax_deposit: 0,
         additional_info: {} as Record<string, string>, completed_requirements: [] as string[], files: {} as Record<string, File | null>,
     });
@@ -36,6 +36,8 @@ export default function OrderCreate({ clients, serviceTypes, company }: Props) {
         if (isFirstRun.current) { isFirstRun.current = false; return; }
         const transVal = Number(data.transaction_value) || 0;
         const njopVal = Number(data.njop) || 0;
+        const luas = Number(data.land_area) || 0;
+        const zntVal = Number(data.znt) || 0;
 
         const N = Math.max(transVal, njopVal);
         const calculatedPph = N > 0 ? N * 0.025 : 0;
@@ -46,9 +48,15 @@ export default function OrderCreate({ clients, serviceTypes, company }: Props) {
         else if (sName.includes('jual beli') || sName.includes('ajb') || sName.includes('hibah')) { currentNpoptkp = 80000000; }
 
         const calculatedBphtb = N > currentNpoptkp ? (N - currentNpoptkp) * 0.05 : 0;
+        
+        // Perhitungan Ploting: Luas Tanah x ZNT / 1000 + 350.000
+        let calculatedPlotting = 0;
+        if (luas > 0 || zntVal > 0) {
+            calculatedPlotting = ((luas * zntVal) / 1000) + 350000;
+        }
 
-        setData(prev => ({ ...prev, pph_fee: calculatedPph, bphtb_fee: calculatedBphtb }));
-    }, [data.transaction_value, data.njop, selectedService]);
+        setData(prev => ({ ...prev, pph_fee: calculatedPph, bphtb_fee: calculatedBphtb, plotting_fee: calculatedPlotting }));
+    }, [data.transaction_value, data.njop, data.land_area, data.znt, selectedService]);
 
     const selectedCategory = serviceTypes.find((t: any) => t.services.some((s: any) => s.id === Number(data.service_id)));
     const isPPAT = selectedCategory?.slug === 'ppat' || selectedCategory?.name?.toLowerCase() === 'ppat';
@@ -239,8 +247,9 @@ export default function OrderCreate({ clients, serviceTypes, company }: Props) {
                                         <h3 className={sectionTitle}><MapPin className="text-rose-500" size={24}/> Detail Objek Tanah / Bangunan</h3>
                                         <div className="space-y-5">
                                             <div><label className={labelClasses}>Atas Nama (A.n)</label><input type="text" value={data.seller_name} onChange={e => setData('seller_name', e.target.value)} className={inputClasses} placeholder="Nama di sertifikat..." /></div>
-                                            <div className="grid grid-cols-3 gap-4">
+                                            <div className="grid grid-cols-2 gap-4">
                                                 <div><label className={labelClasses}>Luas (M²)</label><input type="number" value={data.land_area} onChange={e => setData('land_area', e.target.value)} className={inputClasses} placeholder="0" /></div>
+                                                <div><label className={labelClasses}>ZNT (NJOP/m)</label><input type="number" value={data.znt} onChange={e => setData('znt', e.target.value)} className={inputClasses} placeholder="Rp" /></div>
                                                 <div><label className={labelClasses}>Harga Transaksi</label><input type="number" value={data.transaction_value} onChange={e => setData('transaction_value', e.target.value)} className={inputClasses} placeholder="Rp" /></div>
                                                 <div><label className={labelClasses}>Total NJOP</label><input type="number" value={data.njop} onChange={e => setData('njop', e.target.value)} className={inputClasses} placeholder="Rp" /></div>
                                             </div>
@@ -254,7 +263,19 @@ export default function OrderCreate({ clients, serviceTypes, company }: Props) {
                                         <div><label className={labelClasses}>Honorarium Utama</label><input type="number" value={data.service_price} onChange={e => setData('service_price', Number(e.target.value))} className={`${inputClasses} border-emerald-500/30 text-emerald-400 font-black text-lg`} /></div>
 
                                         <div className="grid grid-cols-2 gap-5">
-                                            {getActiveFees().includes('plotting') && (<div><label className={labelClasses}>Plotting / Lainnya</label><input type="number" value={data.plotting_fee} onChange={e => setData('plotting_fee', Number(e.target.value))} className={inputClasses} /></div>)}
+                                            {getActiveFees().includes('plotting') && (
+                                                <div className="col-span-2 md:col-span-1">
+                                                    <div className="flex justify-between items-end mb-2">
+                                                        <label className={`${labelClasses} !mb-0`}>Plotting / Lainnya</label>
+                                                        {(Number(data.land_area) > 0 || Number(data.znt) > 0) && (
+                                                            <div className="text-[10px] text-indigo-400 font-bold bg-indigo-500/10 px-2.5 py-1.5 rounded-lg border border-indigo-500/20 text-right">
+                                                                (L × ZNT / 1.000) + 350rb
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <input type="number" value={data.plotting_fee} onChange={e => setData('plotting_fee', Number(e.target.value))} className={inputClasses} />
+                                                </div>
+                                            )}
                                             {getActiveFees().includes('penataan_batas') && (<div><label className={labelClasses}>Penataan Batas</label><input type="number" value={data.measurement_fee} onChange={e => setData('measurement_fee', Number(e.target.value))} className={inputClasses} /></div>)}
                                             {getActiveFees().includes('pnbp') && (<div><label className={labelClasses}>PNBP Negara</label><input type="number" value={data.pnbp_fee} onChange={e => setData('pnbp_fee', Number(e.target.value))} className={inputClasses} /></div>)}
                                             {getActiveFees().includes('validasi_pajak') && (<div><label className={labelClasses}>Validasi Pajak</label><input type="number" value={data.validation_fee} onChange={e => setData('validation_fee', Number(e.target.value))} className={inputClasses} /></div>)}

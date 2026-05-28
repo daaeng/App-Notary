@@ -9,7 +9,7 @@ export default function SimulationIndex({ serviceTypes = [], company }: any) {
 
     // State menggunakan useState karena Simulasi tidak disimpan ke Database
     const [data, setData] = useState({
-        client_name: '', phone: '', service_id: '', seller_name: '', land_area: '', transaction_value: '', njop: '',
+        client_name: '', phone: '', service_id: '', seller_name: '', land_area: '', transaction_value: '', njop: '', znt: '',
         service_price: 0, plotting_fee: 0, pnbp_fee: 0, validation_fee: 0, bphtb_fee: 0, pph_fee: 0, measurement_fee: 0, location_check_fee: 0, area_measurement_fee: 0, tax_deposit: 0,
         completed_requirements: [] as string[], additional_info: {} as Record<string, string>
     });
@@ -34,6 +34,8 @@ export default function SimulationIndex({ serviceTypes = [], company }: any) {
 
         const transVal = Number(data.transaction_value) || 0;
         const njopVal = Number(data.njop) || 0;
+        const luas = Number(data.land_area) || 0;
+        const zntVal = Number(data.znt) || 0;
         const N = Math.max(transVal, njopVal); // Ambil nilai tertinggi
 
         const calculatedPph = N > 0 ? N * 0.025 : 0;
@@ -44,9 +46,14 @@ export default function SimulationIndex({ serviceTypes = [], company }: any) {
         else if (sName.includes('jual beli') || sName.includes('ajb') || sName.includes('hibah')) { currentNpoptkp = 80000000; }
 
         const calculatedBphtb = N > currentNpoptkp ? (N - currentNpoptkp) * 0.05 : 0;
+        
+        let calculatedPlotting = 0;
+        if (luas > 0 || zntVal > 0) {
+            calculatedPlotting = ((luas * zntVal) / 1000) + 350000;
+        }
 
-        setData(prev => ({ ...prev, pph_fee: calculatedPph, bphtb_fee: calculatedBphtb }));
-    }, [data.transaction_value, data.njop, selectedService]);
+        setData(prev => ({ ...prev, pph_fee: calculatedPph, bphtb_fee: calculatedBphtb, plotting_fee: calculatedPlotting }));
+    }, [data.transaction_value, data.njop, data.land_area, data.znt, selectedService]);
 
     const selectedCategory = (serviceTypes || []).find((t: any) => (t.services || []).some((s: any) => s.id === Number(data.service_id)));
     const isPPAT = selectedCategory?.slug === 'ppat' || selectedCategory?.name?.toLowerCase() === 'ppat';
@@ -227,10 +234,14 @@ export default function SimulationIndex({ serviceTypes = [], company }: any) {
                                                     <label className={labelClasses}>Atas Nama (A.n)</label>
                                                     <input type="text" value={data.seller_name} onChange={e => updateData('seller_name', e.target.value)} className={inputClasses} placeholder="Nama di sertifikat..." />
                                                 </div>
-                                                <div className="grid grid-cols-3 gap-4 print:flex print:flex-col print:gap-2">
+                                                <div className="grid grid-cols-2 gap-4 print:flex print:flex-col print:gap-2">
                                                     <div className="print:flex print:justify-between print:border-b print:border-gray-200 print:pb-1">
                                                         <label className={labelClasses}>Luas (M²)</label>
                                                         <input type="number" value={data.land_area} onChange={e => updateData('land_area', e.target.value)} className={inputClasses} placeholder="0" />
+                                                    </div>
+                                                    <div className="print:flex print:justify-between print:border-b print:border-gray-200 print:pb-1">
+                                                        <label className={labelClasses}>ZNT (NJOP/m)</label>
+                                                        <input type="number" value={data.znt} onChange={e => updateData('znt', e.target.value)} className={inputClasses} placeholder="Rp" />
                                                     </div>
                                                     <div className="print:flex print:justify-between print:border-b print:border-gray-200 print:pb-1">
                                                         <label className={labelClasses}>Harga Transaksi</label>
@@ -257,7 +268,22 @@ export default function SimulationIndex({ serviceTypes = [], company }: any) {
                                             </div>
 
                                             <div className="grid grid-cols-2 gap-5 print:flex print:flex-col print:gap-2">
-                                                {getActiveFees().includes('plotting') && (<div className="print:flex print:justify-between print:border-b print:border-gray-200 print:pb-1 print:items-center"><label className={labelClasses}>Plotting & Biaya Lain</label><div className="flex items-center gap-2"><span className="hidden print:block font-bold text-sm">Rp</span><input type="number" value={data.plotting_fee} onChange={e => updateData('plotting_fee', Number(e.target.value))} className={`${inputClasses} print:text-right print:w-32`} /></div></div>)}
+                                                {getActiveFees().includes('plotting') && (
+                                                    <div className="col-span-2 md:col-span-1 print:flex print:justify-between print:border-b print:border-gray-200 print:pb-1 print:items-center">
+                                                        <div className="flex justify-between items-end mb-2 print:mb-0 print:items-center">
+                                                            <label className={`${labelClasses} !mb-0`}>Plotting & Biaya Lain</label>
+                                                            {(Number(data.land_area) > 0 || Number(data.znt) > 0) && (
+                                                                <div className="text-[10px] text-indigo-400 font-bold bg-indigo-500/10 px-2.5 py-1.5 rounded-lg border border-indigo-500/20 text-right print:hidden">
+                                                                    (L × ZNT / 1.000) + 350rb
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="hidden print:block font-bold text-sm">Rp</span>
+                                                            <input type="number" value={data.plotting_fee} onChange={e => updateData('plotting_fee', Number(e.target.value))} className={`${inputClasses} print:text-right print:w-32`} />
+                                                        </div>
+                                                    </div>
+                                                )}
                                                 {getActiveFees().includes('penataan_batas') && (<div className="print:flex print:justify-between print:border-b print:border-gray-200 print:pb-1 print:items-center"><label className={labelClasses}>Penataan Batas</label><div className="flex items-center gap-2"><span className="hidden print:block font-bold text-sm">Rp</span><input type="number" value={data.measurement_fee} onChange={e => updateData('measurement_fee', Number(e.target.value))} className={`${inputClasses} print:text-right print:w-32`} /></div></div>)}
                                                 {getActiveFees().includes('pnbp') && (<div className="print:flex print:justify-between print:border-b print:border-gray-200 print:pb-1 print:items-center"><label className={labelClasses}>PNBP Negara</label><div className="flex items-center gap-2"><span className="hidden print:block font-bold text-sm">Rp</span><input type="number" value={data.pnbp_fee} onChange={e => updateData('pnbp_fee', Number(e.target.value))} className={`${inputClasses} print:text-right print:w-32`} /></div></div>)}
                                                 {getActiveFees().includes('validasi_pajak') && (<div className="print:flex print:justify-between print:border-b print:border-gray-200 print:pb-1 print:items-center"><label className={labelClasses}>Validasi Pajak</label><div className="flex items-center gap-2"><span className="hidden print:block font-bold text-sm">Rp</span><input type="number" value={data.validation_fee} onChange={e => updateData('validation_fee', Number(e.target.value))} className={`${inputClasses} print:text-right print:w-32`} /></div></div>)}
