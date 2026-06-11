@@ -6,7 +6,7 @@ export default function Welcome() {
 
     return (
         <>
-            <Head title="Selamat Datang - NotarisApp" />
+            <Head title="Selamat Datang" />
 
             {/* CSS ANIMASI KHUSUS */}
             <style>{`
@@ -44,10 +44,10 @@ export default function Welcome() {
                 {/* Navbar (Turun dari atas) */}
                 <header className="relative z-10 py-6 px-8 flex justify-between items-center max-w-[1400px] mx-auto w-full border-b border-white/5 opacity-0 animate-fade-in-down">
                     <div className="flex items-center gap-3 group cursor-default">
-                        <div className="p-2.5 bg-indigo-500/10 rounded-xl border border-indigo-500/20 group-hover:bg-indigo-500/20 transition-all duration-500">
-                            <Building2 className="text-indigo-500" size={24} />
+                        <div className="flex items-center justify-center p-1.5 w-11 h-11 bg-indigo-500/10 rounded-xl border border-indigo-500/20 shadow-sm overflow-hidden">
+                            <img src="/logo-notalis.svg" alt="Notalis Logo" className="w-full h-full object-cover" />
                         </div>
-                        <span className="text-xl font-black text-white tracking-tight uppercase">Notaris<span className="text-indigo-500">App</span></span>
+                        <span className="text-xl font-black text-white tracking-tight uppercase">Notalis</span>
                     </div>
                 </header>
 
@@ -133,7 +133,7 @@ export default function Welcome() {
 
                 {/* Footer */}
                 <footer className="opacity-0 animate-fade-in-up delay-700 relative z-10 text-center py-8 border-t border-white/5 text-[10px] uppercase tracking-[0.2em] text-slate-600 font-bold">
-                    &copy; {new Date().getFullYear()} NotarisApp. Hak Cipta Dilindungi.
+                    &copy; {new Date().getFullYear()} Notalis. Hak Cipta Dilindungi. Scymithar
                 </footer>
             </div>
         </>

@@ -136,6 +136,10 @@ export default function RequirementsIndex({ serviceTypes = [] }: any) {
         const reqs = getReqs(selectedService.requirements);
         let waText = `*PERSYARATAN BERKAS LAYANAN*\n*KANTOR NOTARIS & PPAT*\n-----------------------------------\n\n*LAYANAN:* ${selectedService.name}\n\n`;
 
+        if (selectedService?.category_name?.toLowerCase().includes('notaris')) {
+            waText += `*ESTIMASI BIAYA DASAR:* ${rupiah(selectedService.default_price)}\n\n`;
+        }
+
         if (reqs.uploads && reqs.uploads.length > 0) {
             waText += `*DOKUMEN FISIK / SCAN:*\n`;
             reqs.uploads.forEach((req: string, i: number) => { waText += `${i + 1}. ${req}\n`; });
@@ -148,7 +152,7 @@ export default function RequirementsIndex({ serviceTypes = [] }: any) {
             waText += `\n`;
         }
 
-        waText += `_Pesan ini dikirim otomatis dari sistem NotarisApp._`;
+        waText += `_Pesan ini dikirim otomatis dari sistem Notalis._`;
         window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(waText)}`, '_blank');
     };
 
@@ -359,7 +363,14 @@ export default function RequirementsIndex({ serviceTypes = [] }: any) {
                             </span>
 
                             {modalMode === 'view' ? (
-                                <h2 className="text-2xl font-black text-slate-900 dark:text-white print:!text-black leading-tight uppercase">LAYANAN: {selectedService?.name}</h2>
+                                <div>
+                                    <h2 className="text-2xl font-black text-slate-900 dark:text-white print:!text-black leading-tight uppercase">LAYANAN: {selectedService?.name}</h2>
+                                    {selectedService?.category_name?.toLowerCase().includes('notaris') && (
+                                        <p className="mt-2 text-sm font-bold text-emerald-600 dark:text-emerald-400 print:text-black uppercase tracking-wider">
+                                            Estimasi Biaya Dasar: {rupiah(selectedService.default_price)}
+                                        </p>
+                                    )}
+                                </div>
                             ) : (
                                 <div>
                                     <label className={labelClasses}>Nama Layanan / Akta</label>

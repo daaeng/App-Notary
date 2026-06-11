@@ -90,18 +90,20 @@ export default function ActivityLogStream({ activities }: Props) {
         <AppLayout breadcrumbs={[{ title: 'Dashboard', href: '/dashboard' }, { title: 'Log Aktivitas', href: '#' }]}>
             <Head title="Jejak Audit" />
 
-            {/* BACKGROUND: Hitam Pekat di Dark Mode */}
-            <div className="min-h-screen bg-gray-50 dark:bg-black font-sans transition-colors duration-300">
+            {/* BACKGROUND: Adaptif Light/Dark Mode dengan aksen glow */}
+            <div className="min-h-screen bg-gray-50 dark:bg-[#09090b] font-sans transition-colors duration-300 relative overflow-hidden">
+                {/* Decorative background elements */}
+                <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none"></div>
+                <div className="absolute bottom-1/4 right-0 w-96 h-96 bg-purple-500/10 rounded-full blur-[100px] pointer-events-none"></div>
 
                 {/* FULL WIDTH CONTAINER */}
-                <div className="w-full mx-auto py-8 px-4 lg:px-8">
+                <div className="w-full mx-auto py-8 px-4 lg:px-8 relative z-10">
 
                     {/* Header Page */}
-                    <div className="mb-10 flex items-end justify-between border-b border-gray-200 dark:border-zinc-800 pb-6">
+                    <div className="mb-10 flex items-end justify-between border-b border-gray-200 dark:border-white/[0.05] pb-6">
                         <div>
-                            <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Jejak Aktivitas</h1>
-                            {/* PERBAIKAN: Warna deskripsi lebih terang (zinc-400) */}
-                            <p className="mt-2 text-sm text-slate-500 dark:text-zinc-400">
+                            <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Jejak Aktivitas</h1>
+                            <p className="mt-2 text-sm text-gray-500 dark:text-slate-400 font-medium">
                                 Monitoring perubahan data sistem secara real-time (Audit Trail).
                             </p>
                         </div>
@@ -116,11 +118,10 @@ export default function ActivityLogStream({ activities }: Props) {
                                 <div key={dateKey} className="relative">
 
                                     {/* STICKY HEADER (Tanggal) */}
-                                    <div className="sticky top-20 z-20 bg-gray-50/95 dark:bg-black/95 backdrop-blur-sm py-3 border-b border-gray-200 dark:border-zinc-900 mb-6">
+                                    <div className="sticky top-20 z-20 bg-gray-50/95 dark:bg-[#09090b]/95 backdrop-blur-md py-3 border-b border-gray-200 dark:border-white/[0.05] mb-6">
                                         <div className="flex items-center gap-4">
-                                            <div className="h-2 w-2 rounded-full bg-slate-400 dark:bg-zinc-500"></div>
-                                            {/* PERBAIKAN: Teks tanggal lebih terang */}
-                                            <h3 className="text-sm font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-300">
+                                            <div className="h-2 w-2 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]"></div>
+                                            <h3 className="text-sm font-bold uppercase tracking-widest text-gray-500 dark:text-slate-300">
                                                 {formatDateHeader(dateKey)}
                                             </h3>
                                         </div>
@@ -128,7 +129,7 @@ export default function ActivityLogStream({ activities }: Props) {
 
                                     <div className="relative pl-2">
                                         {/* GARIS VERTIKAL KIRI */}
-                                        <div className="absolute left-[3px] sm:left-[3px] top-0 bottom-0 w-px bg-gray-300 dark:bg-zinc-800"></div>
+                                        <div className="absolute left-[3px] sm:left-[3px] top-0 bottom-0 w-px bg-gray-200 dark:bg-white/[0.05]"></div>
 
                                         <div className="space-y-4">
                                             {groupedActivities[dateKey].map((log: Activity) => {
@@ -144,16 +145,15 @@ export default function ActivityLogStream({ activities }: Props) {
                                                     <div key={log.id} className="relative flex gap-6 group">
 
                                                         {/* DOT CONNECTOR */}
-                                                        <div className={`absolute left-[-4px] top-5 w-3.5 h-3.5 rounded-full border-2 dark:border-black z-10 transition-all duration-300 ${dotClass} ${isExpanded ? 'scale-125' : 'group-hover:scale-110'}`}></div>
+                                                        <div className={`absolute left-[-4px] top-5 w-3.5 h-3.5 rounded-full border-2 dark:border-[#09090b] z-10 transition-all duration-300 ${dotClass} ${isExpanded ? 'scale-125' : 'group-hover:scale-110'}`}></div>
 
                                                         {/* CARD UTAMA */}
-                                                        {/* PERBAIKAN: Dark Mode pakai bg-zinc-900 (sedikit lebih terang dari hitam background) */}
                                                         <div
                                                             onClick={() => toggleExpand(log.id)}
-                                                            className={`ml-6 flex-grow cursor-pointer rounded-xl border transition-all duration-300 overflow-hidden
+                                                            className={`ml-6 flex-grow cursor-pointer rounded-2xl border transition-all duration-300 overflow-hidden backdrop-blur-sm
                                                                 ${isExpanded
-                                                                    ? 'bg-white dark:bg-zinc-900 border-indigo-500 dark:border-indigo-500/50 shadow-lg ring-1 ring-indigo-500/20'
-                                                                    : 'bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800 hover:border-indigo-300 dark:hover:border-zinc-600 hover:shadow-md'
+                                                                    ? 'bg-white dark:bg-white/[0.04] border-indigo-500 dark:border-indigo-500/50 shadow-lg ring-1 ring-indigo-500/20'
+                                                                    : 'bg-white dark:bg-white/[0.02] border-gray-100 dark:border-white/[0.05] hover:border-indigo-300 dark:hover:border-white/[0.1] hover:bg-gray-50 dark:hover:bg-white/[0.04] shadow-sm'
                                                                 }`}
                                                         >
                                                             <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -161,32 +161,32 @@ export default function ActivityLogStream({ activities }: Props) {
                                                                 {/* BAGIAN KIRI: Info Utama */}
                                                                 <div className="flex-grow">
                                                                     <div className="flex items-center gap-3 mb-2">
-                                                                        {/* Waktu (Kontras diperbaiki) */}
-                                                                        <span className="text-xs font-mono font-bold text-slate-600 dark:text-zinc-300 bg-slate-100 dark:bg-black px-2 py-0.5 rounded border border-slate-200 dark:border-zinc-700">
+                                                                        {/* Waktu */}
+                                                                        <span className="text-xs font-mono font-bold text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-white/[0.05] px-2 py-0.5 rounded border border-gray-200 dark:border-white/[0.05]">
                                                                             {formatTime(log.created_at)}
                                                                         </span>
 
-                                                                        {/* Nama User (Putih Terang) */}
-                                                                        <span className="text-sm font-bold text-slate-800 dark:text-white">
+                                                                        {/* Nama User */}
+                                                                        <span className="text-sm font-bold text-gray-900 dark:text-white">
                                                                             {log.causer?.name || 'Sistem Otomatis'}
                                                                         </span>
 
                                                                         {/* Badge Event */}
                                                                         <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide border
-                                                                            ${log.event === 'created' ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-900' :
-                                                                            log.event === 'updated' ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-400 dark:border-blue-900' :
-                                                                            'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-400 dark:border-red-900'}`}>
+                                                                            ${log.event === 'created' ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' :
+                                                                            log.event === 'updated' ? 'bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20' :
+                                                                            'bg-red-50 text-red-600 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20'}`}>
                                                                             {log.event}
                                                                         </span>
                                                                     </div>
 
-                                                                    {/* Deskripsi & Target (Warna zinc-300 agar jelas) */}
+                                                                    {/* Deskripsi & Target */}
                                                                     <div className="flex items-center gap-2 flex-wrap">
-                                                                        <p className="text-sm text-slate-600 dark:text-zinc-300 font-medium">
+                                                                        <p className="text-sm text-gray-600 dark:text-slate-300 font-medium">
                                                                             {log.description}
                                                                         </p>
-                                                                        <svg className="hidden sm:block w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
-                                                                        <span className="text-sm font-bold text-slate-800 dark:text-zinc-200 bg-slate-50 dark:bg-zinc-800 px-2 py-0.5 rounded border border-transparent dark:border-zinc-700">
+                                                                        <svg className="hidden sm:block w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+                                                                        <span className="text-sm font-bold text-gray-800 dark:text-slate-200 bg-gray-50 dark:bg-white/[0.05] px-2 py-0.5 rounded border border-transparent dark:border-white/[0.05]">
                                                                             {log.subject?.order_number || log.subject?.name || `ID #${log.id}`}
                                                                         </span>
                                                                     </div>
@@ -194,7 +194,7 @@ export default function ActivityLogStream({ activities }: Props) {
 
                                                                 {/* BAGIAN KANAN: Tombol Expand */}
                                                                 <div className="flex-shrink-0 self-center">
-                                                                    <div className={`p-2 rounded-full transition-colors ${isExpanded ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-300' : 'text-slate-300 dark:text-zinc-500 hover:bg-slate-50 dark:hover:bg-zinc-800 hover:text-slate-600 dark:hover:text-zinc-300'}`}>
+                                                                    <div className={`p-2 rounded-full transition-colors ${isExpanded ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400' : 'text-gray-400 dark:text-slate-500 hover:bg-gray-100 dark:hover:bg-white/[0.05] hover:text-gray-600 dark:hover:text-white'}`}>
                                                                         <svg className={`w-5 h-5 transform transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
                                                                     </div>
                                                                 </div>
@@ -203,8 +203,8 @@ export default function ActivityLogStream({ activities }: Props) {
                                                             {/* AREA DETAIL (Expandable) */}
                                                             {isExpanded && (
                                                                 <div className="px-5 pb-5 pt-0 animate-fade-in-down">
-                                                                    <div className="border-t border-gray-100 dark:border-zinc-800 pt-4">
-                                                                        <h4 className="text-xs font-bold text-slate-400 dark:text-zinc-400 uppercase tracking-widest mb-3">
+                                                                    <div className="border-t border-gray-100 dark:border-white/[0.05] pt-4">
+                                                                        <h4 className="text-[10px] font-bold text-gray-500 dark:text-slate-500 uppercase tracking-widest mb-3">
                                                                             Rincian Perubahan
                                                                         </h4>
 
@@ -217,21 +217,21 @@ export default function ActivityLogStream({ activities }: Props) {
                                                                                     if (log.event === 'updated' && oldVal == newVal) return null;
 
                                                                                     return (
-                                                                                        <div key={key} className="flex flex-col bg-gray-50 dark:bg-black rounded-lg border border-gray-100 dark:border-zinc-800 p-3 hover:border-indigo-200 dark:hover:border-zinc-700 transition">
-                                                                                            <span className="text-[10px] font-bold uppercase text-slate-400 dark:text-zinc-500 mb-2">
+                                                                                        <div key={key} className="flex flex-col bg-gray-50 dark:bg-[#09090b]/50 rounded-xl border border-gray-100 dark:border-white/[0.05] p-4 hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-colors">
+                                                                                            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-slate-400 mb-2">
                                                                                                 {formatField(key)}
                                                                                             </span>
 
                                                                                             <div className="flex items-center justify-between text-sm">
                                                                                                 {/* Old Value */}
-                                                                                                <div className="text-red-500 dark:text-red-400 line-through decoration-red-500/30 opacity-70 truncate max-w-[45%] font-mono">
+                                                                                                <div className="text-red-500 dark:text-red-400 line-through decoration-red-500/30 opacity-70 truncate max-w-[45%] font-mono bg-red-50 dark:bg-red-500/5 px-2 py-1 rounded">
                                                                                                     {formatValue(key, oldVal)}
                                                                                                 </div>
 
-                                                                                                <div className="text-slate-300 dark:text-zinc-600">➜</div>
+                                                                                                <div className="text-gray-300 dark:text-slate-600 px-2">➜</div>
 
-                                                                                                {/* New Value (Warna diperjelas) */}
-                                                                                                <div className="text-emerald-600 dark:text-emerald-400 font-bold truncate max-w-[45%] font-mono">
+                                                                                                {/* New Value */}
+                                                                                                <div className="text-emerald-600 dark:text-emerald-400 font-bold truncate max-w-[45%] font-mono bg-emerald-50 dark:bg-emerald-500/5 px-2 py-1 rounded">
                                                                                                     {formatValue(key, newVal)}
                                                                                                 </div>
                                                                                             </div>
@@ -257,22 +257,22 @@ export default function ActivityLogStream({ activities }: Props) {
                     </div>
 
                     {/* Pagination */}
-                    <div className="mt-16 flex justify-center">
-                        <div className="inline-flex rounded-lg shadow-sm bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 p-1">
+                    <div className="mt-16 flex justify-center relative z-10">
+                        <div className="inline-flex rounded-xl shadow-sm bg-white dark:bg-[#09090b] border border-gray-200 dark:border-white/[0.05] p-1.5">
                             {activities.links.map((link: any, index: number) => (
                                 link.url ? (
                                     <Link
                                         key={index}
                                         href={link.url}
-                                        className={`px-4 py-2 text-xs font-bold rounded-md transition-colors ${
+                                        className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors ${
                                             link.active
-                                                ? 'bg-slate-900 text-white dark:bg-white dark:text-black'
-                                                : 'text-slate-500 hover:bg-slate-50 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white'
+                                                ? 'bg-indigo-600 text-white shadow-md'
+                                                : 'text-gray-500 hover:bg-gray-50 dark:text-slate-400 dark:hover:bg-white/[0.05] dark:hover:text-white'
                                         }`}
                                         dangerouslySetInnerHTML={{ __html: link.label }}
                                     />
                                 ) : (
-                                    <span key={index} className="px-4 py-2 text-xs text-slate-300 dark:text-zinc-700" dangerouslySetInnerHTML={{ __html: link.label }} />
+                                    <span key={index} className="px-4 py-2 text-xs text-gray-300 dark:text-slate-600" dangerouslySetInnerHTML={{ __html: link.label }} />
                                 )
                             ))}
                         </div>

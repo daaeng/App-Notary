@@ -101,15 +101,25 @@ class OrderController extends Controller
             'client_id' => 'required|exists:clients,id',
             'service_id' => 'required|exists:services,id',
             'completed_requirements' => 'nullable|array', // [BARU]
+            'completed_at' => 'nullable|date', // [BARU]
         ]);
 
         DB::beginTransaction();
         try {
             $totalAmount = ($request->service_price ?? 0) + ($request->plotting_fee ?? 0) + ($request->pnbp_fee ?? 0) + ($request->validation_fee ?? 0) + ($request->bphtb_fee ?? 0) + ($request->pph_fee ?? 0) + ($request->measurement_fee ?? 0) + ($request->tax_deposit ?? 0) + ($request->location_check_fee ?? 0) + ($request->area_measurement_fee ?? 0);
 
+            $newStatus = $request->status ?? $order->status;
+            $completedAt = $order->completed_at;
+            
+            if ($newStatus === 'done') {
+                $completedAt = $request->completed_at ?? ($order->completed_at ?? now()->toDateString());
+            } else {
+                $completedAt = null;
+            }
+
             $order->update([
                 'client_id' => $request->client_id, 'service_id' => $request->service_id,
-                'description' => $request->description, 'akta_date' => $request->akta_date, 'status' => $request->status ?? $order->status,
+                'description' => $request->description, 'akta_date' => $request->akta_date, 'status' => $newStatus,
                 'service_price' => $request->service_price ?? 0, 'plotting_fee' => $request->plotting_fee ?? 0,
                 'pnbp_fee' => $request->pnbp_fee ?? 0, 'validation_fee' => $request->validation_fee ?? 0,
                 'bphtb_fee' => $request->bphtb_fee ?? 0, 'pph_fee' => $request->pph_fee ?? 0,
@@ -117,6 +127,7 @@ class OrderController extends Controller
                 'area_measurement_fee' => $request->area_measurement_fee ?? 0, 'tax_deposit' => $request->tax_deposit ?? 0,
                 'total_amount' => $totalAmount, 'additional_info' => $request->additional_info,
                 'completed_requirements' => $request->completed_requirements ?? [], // [BARU] Update Checklist
+                'completed_at' => $completedAt, // [BARU]
             ]);
 
             $service = Service::with('type')->find($request->service_id);
@@ -223,5 +234,78 @@ class OrderController extends Controller
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Gagal menghapus file.']);
         }
+    }
+
+    public function printFiles(\Illuminate\Http\Request $request, Order $order)
+    {
+        $query = $order->files();
+        
+        if ($request->has('files')) {
+            $fileIds = explode(',', $request->query('files'));
+            $query->whereIn('id', $fileIds);
+        }
+
+        $files = $query->get();
+        if ($files->isEmpty()) {
+            return back()->with('error', 'Tidak ada file untuk dicetak.');
+        }
+
+        $pdf = new \setasign\Fpdi\Fpdi();
+
+        foreach ($files as $file) {
+            $path = storage_path('app/public/' . $file->file_path);
+            if (!file_exists($path)) continue;
+
+            $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+            if ($ext === 'pdf') {
+                try {
+                    $pageCount = $pdf->setSourceFile($path);
+                    for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
+                        $templateId = $pdf->importPage($pageNo);
+                        $size = $pdf->getTemplateSize($templateId);
+                        $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
+                        $pdf->useTemplate($templateId);
+                    }
+                } catch (\Exception $e) {
+                    // Skip invalid PDFs
+                }
+            } elseif (in_array($ext, ['jpg', 'jpeg', 'png'])) {
+                try {
+                    $size = getimagesize($path);
+                    if ($size) {
+                        $orientation = $size[0] > $size[1] ? 'L' : 'P';
+                        $pdf->AddPage($orientation);
+                        
+                        $maxWidth = $orientation == 'P' ? 210 : 297;
+                        $maxHeight = $orientation == 'P' ? 297 : 210;
+                        
+                        // Margin
+                        $maxWidth -= 20;
+                        $maxHeight -= 20;
+
+                        $width = $size[0];
+                        $height = $size[1];
+                        $ratio = min($maxWidth / $width, $maxHeight / $height);
+                        $newWidth = $width * $ratio;
+                        $newHeight = $height * $ratio;
+
+                        $x = ($orientation == 'P' ? 210 : 297 - $newWidth) / 2;
+                        $y = ($orientation == 'P' ? 297 : 210 - $newHeight) / 2;
+
+                        // Add title for image
+                        $pdf->SetFont('Arial', 'B', 12);
+                        $pdf->SetXY(10, 5);
+                        $pdf->Cell(0, 10, strtoupper($file->category) . ' - ' . $file->file_name, 0, 1, 'C');
+
+                        $pdf->Image($path, (210 - $newWidth)/2, (297 - $newHeight)/2 + 5, $newWidth, $newHeight);
+                    }
+                } catch (\Exception $e) {
+                    // Skip invalid images
+                }
+            }
+        }
+
+        $pdf->Output('I', 'Cetak_File_' . $order->order_number . '.pdf');
     }
 }

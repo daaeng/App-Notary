@@ -28,6 +28,7 @@ class CompanyController extends Controller
             'account_number' => 'nullable|string|max:255',
             'account_name' => 'nullable|string|max:255',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'staff_data' => 'nullable|array',
         ]);
 
         $company = Company::firstOrFail();

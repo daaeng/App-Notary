@@ -41,7 +41,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // A. Statistik Order
         $totalOrders = Order::count();
         $activeOrders = Order::whereIn('status', ['new', 'draft', 'process', 'minuta'])->count();
-        $completedOrders = Order::where('status', 'done')->whereMonth('updated_at', $currentMonth)->count();
+        $completedOrders = Order::where('status', 'done')->whereMonth('completed_at', $currentMonth)->whereYear('completed_at', $currentYear)->count();
         $totalClients = \App\Models\Client::count(); // Tambahan: Total Klien
 
         // B. Keuangan (Real Cashflow Logic - Pertahankan yang sudah benar)
@@ -94,6 +94,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::group(['middleware' => ['role:super_admin|staff|notaris|bos']], function () {
         Route::resource('orders', OrderController::class)->except(['destroy']);
         Route::get('orders/{order}/invoice', [OrderController::class, 'invoice'])->name('orders.invoice');
+        Route::get('orders/{order}/print-files', [OrderController::class, 'printFiles'])->name('orders.print-files');
         Route::post('orders/{order}/files', [OrderController::class, 'uploadFile'])->name('orders.upload');
     });
 

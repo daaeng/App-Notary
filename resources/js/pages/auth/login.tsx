@@ -24,7 +24,7 @@ export default function Login({ status, canResetPassword }: { status?: string; c
 
     return (
         <div className="min-h-screen bg-[#09090b] text-slate-300 font-sans flex flex-col items-center justify-center p-6 relative overflow-hidden">
-            <Head title="Masuk ke Sistem - NotarisApp" />
+            <Head title="Masuk ke Sistem" />
 
             {/* Efek Background Glow */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[800px] h-[400px] bg-indigo-600/10 blur-[120px] rounded-full pointer-events-none"></div>
@@ -34,12 +34,12 @@ export default function Login({ status, canResetPassword }: { status?: string; c
                 {/* Logo & Header */}
                 <div className="text-center mb-10">
                     <Link href="/" className="inline-flex items-center gap-3 mb-6 group">
-                        <div className="p-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 group-hover:border-indigo-500/40 transition-all shadow-lg">
-                            <Building2 className="text-indigo-500" size={32} />
+                        <div className="flex items-center justify-center p-2 w-16 h-16 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 shadow-xl overflow-hidden group-hover:scale-105 group-hover:bg-indigo-500/20 transition-all">
+                            <img src="/logo-notalis.svg" alt="Notalis Logo" className="w-full h-full object-cover" />
                         </div>
                     </Link>
                     <h1 className="text-3xl font-black text-white tracking-tight uppercase">
-                        Notaris<span className="text-indigo-500">App</span>
+                        Notalis
                     </h1>
                     <p className="text-sm text-slate-500 mt-2 font-medium">
                         Silakan masuk untuk mengelola operasional kantor.
@@ -154,7 +154,7 @@ export default function Login({ status, canResetPassword }: { status?: string; c
 
             {/* Copyright */}
             <footer className="absolute bottom-8 text-[10px] uppercase tracking-widest text-slate-800 font-bold">
-                &copy; {new Date().getFullYear()} NotarisApp. Hak Cipta Dilindungi.
+                &copy; {new Date().getFullYear()} Notalis. Hak Cipta Dilindungi. Scymithar
             </footer>
         </div>
     );

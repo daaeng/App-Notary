@@ -153,11 +153,11 @@ export function AppSidebar() {
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
                             <Link href={route('dashboard')}>
-                                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-slate-900 text-sidebar-primary-foreground">
-                                    <Building2 className="size-4 text-white" />
+                                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-indigo-500/10 overflow-hidden border border-indigo-500/20 p-1">
+                                    <img src="/logo-notalis.svg" alt="Notalis Logo" className="size-full object-cover" />
                                 </div>
                                 <div className="grid flex-1 text-left text-sm leading-tight">
-                                    <span className="truncate font-bold">NotarisApp</span>
+                                    <span className="truncate font-bold">Notalis</span>
                                     <span className="truncate text-xs text-slate-500">Workspace</span>
                                 </div>
                             </Link>

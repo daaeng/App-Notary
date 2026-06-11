@@ -20,8 +20,11 @@ interface Props extends PageProps {
         account_number: string | null;
         account_name: string | null;
         logo_path: string | null;
+        staff_data: any[] | null;
     };
 }
+
+import { PlusCircle, Trash2, Users } from 'lucide-react';
 
 export default function OfficeEdit({ company }: Props) {
     const [preview, setPreview] = useState<string | null>(
@@ -40,6 +43,7 @@ export default function OfficeEdit({ company }: Props) {
         account_number: company.account_number || '',
         account_name: company.account_name || '',
         logo: null as File | null,
+        staff_data: (company.staff_data || []) as { name: string, position: string, phone: string }[],
     });
 
     const toastConfig = {
@@ -85,9 +89,25 @@ export default function OfficeEdit({ company }: Props) {
         });
     };
 
-    const inputClasses = "mt-1 block w-full rounded-xl bg-slate-900/50 border border-slate-700 text-slate-100 placeholder-slate-500 shadow-sm focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-sm py-3 px-4 transition-all outline-none";
-    const labelClasses = "block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1";
-    const sectionTitle = "text-lg font-bold text-white mb-4 flex items-center gap-2 border-b border-slate-800 pb-2";
+    const addStaff = () => {
+        setData('staff_data', [...data.staff_data, { name: '', position: '', phone: '' }]);
+    };
+
+    const removeStaff = (index: number) => {
+        const newData = [...data.staff_data];
+        newData.splice(index, 1);
+        setData('staff_data', newData);
+    };
+
+    const handleStaffChange = (index: number, field: string, value: string) => {
+        const newData = [...data.staff_data];
+        newData[index] = { ...newData[index], [field]: value };
+        setData('staff_data', newData);
+    };
+
+    const inputClasses = "mt-1 block w-full rounded-2xl bg-[#09090b] border border-[#27272a] text-slate-200 placeholder-slate-600 shadow-inner focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm py-3.5 px-4 transition-all outline-none hover:bg-[#09090b]/80";
+    const labelClasses = "block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1";
+    const sectionTitle = "text-lg font-black text-white mb-6 flex items-center gap-3 border-b border-[#27272a] pb-4 uppercase tracking-wide";
 
     return (
         <AppLayout breadcrumbs={[{ title: 'Pengaturan', href: '/office-settings' }]}>
@@ -135,10 +155,10 @@ export default function OfficeEdit({ company }: Props) {
                             <div className="bg-slate-950 rounded-[2rem] p-8 lg:p-12 border border-slate-800/50 shadow-2xl relative overflow-hidden transition-all hover:border-slate-700">
                                 <div className="absolute top-0 left-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none"></div>
 
-                                <div className="relative z-10 space-y-10">
+                                <div className="relative z-10 space-y-12">
                                     {/* SECTION 1 */}
-                                    <div className="group">
-                                        <h3 className={sectionTitle}><span className="w-1.5 h-6 bg-cyan-500 rounded-full group-hover:scale-y-125 transition-transform"></span> Informasi Dasar</h3>
+                                    <div className="group animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+                                        <h3 className={sectionTitle}><span className="w-2 h-6 bg-indigo-500 rounded-full group-hover:scale-y-125 transition-transform"></span> Informasi Dasar</h3>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                             <div>
                                                 <label className={labelClasses}>Nama Kantor</label>
@@ -158,8 +178,8 @@ export default function OfficeEdit({ company }: Props) {
                                     </div>
 
                                     {/* SECTION 2 */}
-                                    <div className="group">
-                                        <h3 className={sectionTitle}><span className="w-1.5 h-6 bg-indigo-500 rounded-full group-hover:scale-y-125 transition-transform"></span> Kontak & Alamat</h3>
+                                    <div className="group animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+                                        <h3 className={sectionTitle}><span className="w-2 h-6 bg-cyan-500 rounded-full group-hover:scale-y-125 transition-transform"></span> Kontak & Alamat</h3>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
                                             <div>
                                                 <label className={labelClasses}>No. Telepon / WhatsApp</label>
@@ -177,8 +197,8 @@ export default function OfficeEdit({ company }: Props) {
                                     </div>
 
                                     {/* SECTION 3 */}
-                                    <div className="group">
-                                        <h3 className={sectionTitle}><span className="w-1.5 h-6 bg-emerald-500 rounded-full group-hover:scale-y-125 transition-transform"></span> Rekening Pembayaran</h3>
+                                    <div className="group animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+                                        <h3 className={sectionTitle}><span className="w-2 h-6 bg-emerald-500 rounded-full group-hover:scale-y-125 transition-transform"></span> Rekening Pembayaran</h3>
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                             <div>
                                                 <label className={labelClasses}>Nama Bank</label>
@@ -195,11 +215,40 @@ export default function OfficeEdit({ company }: Props) {
                                         </div>
                                     </div>
 
+                                    {/* SECTION 4: DATA STAFF NOTARIS */}
+                                    <div className="group animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+                                        <h3 className={sectionTitle}><span className="w-2 h-6 bg-purple-500 rounded-full group-hover:scale-y-125 transition-transform"></span> <Users className="text-purple-500" size={20}/> Data Staff Notaris</h3>
+                                        <div className="space-y-4 bg-[#18181b]/50 p-6 rounded-3xl border border-[#27272a]">
+                                            {data.staff_data.map((staff, index) => (
+                                                <div key={index} className="flex flex-col md:flex-row gap-4 items-start md:items-end">
+                                                    <div className="flex-1 w-full">
+                                                        <label className={labelClasses}>Nama Lengkap</label>
+                                                        <input type="text" value={staff.name} onChange={e => handleStaffChange(index, 'name', e.target.value)} className={inputClasses} placeholder="Nama staff..." />
+                                                    </div>
+                                                    <div className="flex-1 w-full">
+                                                        <label className={labelClasses}>Posisi / Jabatan</label>
+                                                        <input type="text" value={staff.position} onChange={e => handleStaffChange(index, 'position', e.target.value)} className={inputClasses} placeholder="Contoh: Staff Admin..." />
+                                                    </div>
+                                                    <div className="flex-1 w-full">
+                                                        <label className={labelClasses}>No. HP / WA</label>
+                                                        <input type="text" value={staff.phone || ''} onChange={e => handleStaffChange(index, 'phone', e.target.value)} className={inputClasses} placeholder="0812..." />
+                                                    </div>
+                                                    <button type="button" onClick={() => removeStaff(index)} className="p-4 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-2xl transition-all shadow-sm w-full md:w-auto flex justify-center mt-2 md:mt-0">
+                                                        <Trash2 size={18} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                            <button type="button" onClick={addStaff} className="w-full py-4 border border-dashed border-[#27272a] text-slate-400 hover:border-purple-500 hover:text-purple-400 rounded-2xl text-[11px] font-bold uppercase tracking-widest flex justify-center items-center gap-2 transition-all hover:bg-purple-500/5">
+                                                <PlusCircle size={16}/> Tambah Data Staff
+                                            </button>
+                                        </div>
+                                    </div>
+
                                     {/* ACTION BUTTON */}
-                                    <div className="pt-8 border-t border-slate-800 flex justify-end items-center gap-4">
-                                        <span className="text-[10px] text-slate-500 italic hidden md:block">Perubahan akan langsung diterapkan pada sistem invoicing.</span>
-                                        <button type="submit" disabled={processing} className="px-12 py-4 bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl shadow-2xl shadow-cyan-900/40 transform hover:-translate-y-1 active:scale-95 transition-all disabled:opacity-50">
-                                            {processing ? 'Menyimpan...' : 'Update Identitas'}
+                                    <div className="pt-10 border-t border-[#27272a] flex justify-end items-center gap-4 animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
+                                        <span className="text-[10px] text-slate-500 font-medium hidden md:block uppercase tracking-widest bg-[#18181b] px-3 py-1.5 rounded-lg border border-[#27272a]">Perubahan langsung diterapkan pada sistem</span>
+                                        <button type="submit" disabled={processing} className="px-10 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-[11px] uppercase tracking-widest rounded-2xl shadow-xl shadow-indigo-600/20 active:scale-95 transition-all disabled:opacity-50 flex items-center gap-2">
+                                            {processing ? 'Menyimpan...' : 'Simpan Perubahan'}
                                         </button>
                                     </div>
 
